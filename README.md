@@ -1,4 +1,6 @@
-# 📚 Agentic RAG over ML Research Papers
+# 📚 PaperSage
+
+### Agentic RAG over ML research papers — grounded, cited answers
 
 A full-stack, **fully open-source** Retrieval-Augmented Generation (RAG) system that answers
 natural-language questions about machine-learning research papers — with **grounded, cited
