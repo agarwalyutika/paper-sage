@@ -1,0 +1,26 @@
+# --- Core ingestion (getting papers + reading them) ---
+arxiv==2.1.3                 # download paper metadata + PDFs from arXiv
+pymupdf==1.24.10             # read text out of PDF files (imported as "fitz")
+
+# --- Retrieval (the search engine) ---
+qdrant-client==1.12.0        # vector database; runs locally on disk, NO server/Docker needed
+sentence-transformers==3.2.1 # turns text into vectors (embeddings) + reranker models
+rank-bm25==0.2.2             # classic keyword search (the BM25 half of "hybrid")
+
+# --- Generation (writing the answer) ---
+groq>=1.5.0                  # free hosted Llama API client (the default LLM backend)
+anthropic==0.39.0            # Claude API client (optional backend)
+python-dotenv==1.0.1         # loads secret API keys from a .env file (kept out of git)
+
+# --- API + UI ---
+fastapi==0.115.2             # backend web server
+uvicorn==0.32.0              # runs the FastAPI server
+streamlit==1.39.0            # the clickable UI you will demo
+pydantic==2.9.2              # typed request/response shapes + validation
+
+# --- Utilities ---
+tqdm==4.66.5                 # progress bars while downloading/indexing
+
+# NOTE on torch: sentence-transformers installs PyTorch automatically.
+#   - On your laptop: a CPU version installs (fine for fast query-time search).
+#   - On Colab: GPU torch is already preinstalled (used for one-time bulk indexing).

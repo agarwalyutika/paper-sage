@@ -1,0 +1,22 @@
+# Secrets: NEVER commit your API keys
+.env
+
+# Python junk
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Big / generated data (rebuildable, kept out of git)
+# This excludes downloaded PDFs, the vector DB, embeddings, and caches.
+data/
+
+# Model caches
+.cache/
+models/
+
+# OS / editor noise
+.DS_Store
+.ipynb_checkpoints/
+.streamlit/secrets.toml
