@@ -73,8 +73,12 @@ def diagram_widget(answer: str, key: str) -> None:
 
 
 def render_sources(answer_text: str, sources: list[dict]) -> None:
+    is_web = bool(sources) and sources[0].get("kind") == "web"
     v = validate_citations(answer_text, len(sources))
-    if v["is_refusal"]:
+    if is_web:
+        st.info("🌐 Answered from the **web** — your paper corpus didn't cover this. "
+                "Sources are linked below.")
+    elif v["is_refusal"]:
         st.info("🛡️ No supporting evidence found — declined to answer rather than guessing.")
     elif v["is_grounded"]:
         cited = ", ".join(f"[{n}]" for n in v["cited_sources"])
@@ -84,11 +88,14 @@ def render_sources(answer_text: str, sources: list[dict]) -> None:
     if not sources:
         return
     cited_set = set(v["cited_sources"])
-    with st.expander(f"📄 Sources ({len(sources)})"):
+    label = "🌐 Web sources" if is_web else "📄 Sources"
+    with st.expander(f"{label} ({len(sources)})"):
         for s in sources:
             used = s["n"] in cited_set
             head = f"{'✅ ' if used else ''}**[{s['n']}] {s['title'][:75]}**"
-            if s.get("url"):
+            if s.get("kind") == "web":
+                st.markdown(f"{head} · 🌐 [{s['arxiv_id']}]({s['url']})")
+            elif s.get("url"):
                 st.markdown(f"{head} · [arXiv:{s['arxiv_id']}]({s['url']})")
             else:
                 st.markdown(f"{head} · {s['arxiv_id']}")
@@ -191,7 +198,7 @@ def render_chat_view() -> None:
                 answer_text = ("ℹ️ *General knowledge — not grounded in your paper "
                                "corpus.*\n\n" + answer_text)
             st.markdown(answer_text)
-            if result.get("mode") == "search":
+            if result["sources"]:        # grounded (papers) OR web answer
                 render_sources(result["answer"], result["sources"])
         store.add_message(sid, "assistant", answer_text, sources=result["sources"])
         st.rerun()

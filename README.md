@@ -30,7 +30,8 @@ facts).
 - **Cross-encoder reranking** — re-scores candidates for precision (BGE reranker)
 - **Grounded generation** — answers strictly from retrieved passages, never outside knowledge
 - **Citation enforcement + validation** — every claim cites `[n]`; invalid citations are flagged
-- **Grounded-vs-general routing** — the generator decides whether the retrieved passages truly answer the question: grounds + cites when they do, or falls back to clearly-labeled *"general knowledge"* when they don't (so basic questions the corpus can't answer don't get a wrong grounded answer)
+- **Grounded-vs-general routing** — the generator decides whether the retrieved passages truly answer the question: grounds + cites when they do, or falls back when they don't
+- **Web-search fallback** — when the papers don't cover a question, it searches the web (DuckDuckGo; Tavily optional) and answers with **clickable web citations**, before settling for general knowledge. Full agentic source chain: *papers → web → general knowledge*
 - **Honest refusal** — says "not enough information" instead of bluffing
 - **Agentic router** — an LLM decides per message: just chat (greetings, "who are you") vs. retrieve-and-cite
 - **Conversational chat with memory** — multi-turn follow-ups ("what about its limitations?") via question condensing

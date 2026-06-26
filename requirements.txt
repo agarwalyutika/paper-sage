@@ -12,6 +12,9 @@ groq>=1.5.0                  # free hosted Llama API client (the default LLM bac
 anthropic==0.39.0            # Claude API client (optional backend)
 python-dotenv==1.0.1         # loads secret API keys from a .env file (kept out of git)
 
+# --- Web search fallback (when the papers don't cover a question) ---
+ddgs                         # free DuckDuckGo search, no API key needed
+
 # --- API + UI ---
 fastapi==0.115.2             # backend web server
 uvicorn==0.32.0              # runs the FastAPI server

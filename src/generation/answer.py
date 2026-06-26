@@ -98,6 +98,35 @@ def generate_answer(question: str, passages: list[dict],
     }
 
 
+WEB_SYSTEM = """You answer a question using WEB RESULTS (the ML paper corpus didn't cover it).
+Answer accurately and concisely, and cite every claim with [n] referring to the numbered web
+results. Begin your answer with exactly "🌐 From the web:". If the results don't actually answer
+the question, say so briefly. Never invent citations."""
+
+
+def generate_web_answer(question: str, results: list[dict],
+                        provider: LLMProvider | None = None,
+                        history: list[dict] | None = None) -> dict:
+    """Answer a question from web search results, citing each by [n] -> URL."""
+    provider = provider or get_provider()
+    blocks = [f"[{i}] ({r['title']} — {r['domain']})\n{r['content'][:500]}"
+              for i, r in enumerate(results, 1)]
+    user_prompt = ("WEB RESULTS:\n" + "\n\n".join(blocks)
+                   + f"\n\nQUESTION: {question}\n\nAnswer:")
+    if history:
+        user_prompt = format_history(history) + "\n\n" + user_prompt
+    answer_text = provider.generate(WEB_SYSTEM, user_prompt)
+
+    sources = [
+        {"n": i, "title": r["title"], "arxiv_id": r["domain"],
+         "url": r["url"], "text": r["content"][:320], "kind": "web"}
+        for i, r in enumerate(results, 1)
+    ]
+    validation = validate_citations(answer_text, num_sources=len(sources))
+    return {"question": question, "answer": answer_text, "sources": sources,
+            "validation": validation, "mode": "web"}
+
+
 def _demo(question: str) -> None:
     # Lazy import so this file doesn't load the heavy retriever unless run directly.
     from src.retrieval.search import Retriever

@@ -95,5 +95,12 @@ class Settings:
     # Penalize repeated tokens a bit, so weaker models don't get stuck looping.
     LLM_FREQUENCY_PENALTY = 0.3
 
+    # --- Web search fallback (used when the papers don't cover the question) ---
+    WEB_SEARCH_ENABLED = True
+    # "duckduckgo" = free, no key (default). "tavily" = free key, more reliable content.
+    WEB_SEARCH_BACKEND = os.getenv("WEB_SEARCH_BACKEND", "duckduckgo")
+    WEB_SEARCH_K = 5
+    TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+
 
 settings = Settings()

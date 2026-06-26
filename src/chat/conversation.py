@@ -12,8 +12,10 @@ whenever the user actually asks about the papers.
 """
 from typing import Callable
 
+from src.config import settings
 from src.generation.provider import get_provider, LLMProvider
-from src.generation.answer import generate_answer
+from src.generation.answer import generate_answer, generate_web_answer
+from src.web.search import web_search
 
 # --- prompts -----------------------------------------------------------------
 ROUTER_SYSTEM = """You are a router. Read the user's latest message (with brief \
@@ -94,4 +96,13 @@ def answer_in_conversation(history: list[dict], message: str,
     passages = search_fn(standalone)
     result = generate_answer(message, passages, provider=provider, history=history)
     result["standalone_query"] = standalone   # mode is set by generate_answer
+
+    # If the papers didn't cover it, try the WEB before settling for general knowledge.
+    if result["mode"] == "general" and settings.WEB_SEARCH_ENABLED:
+        web_results = web_search(standalone)
+        if web_results:
+            web = generate_web_answer(message, web_results, provider=provider, history=history)
+            web["standalone_query"] = standalone
+            return web
+
     return result
