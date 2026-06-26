@@ -73,7 +73,10 @@ class Settings:
 
     # Groq (free, hosted open-source Llama)
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-    GROQ_MODEL = "llama-3.3-70b-versatile"   # strong, free on Groq
+    GROQ_MODEL = "llama-3.3-70b-versatile"        # strong primary model
+    # If the primary model hits its daily rate limit, fall back to this faster,
+    # higher-quota model so the app keeps working.
+    GROQ_FALLBACK_MODEL = "llama-3.1-8b-instant"
 
     # Claude (optional, paid) -- used only if LLM_BACKEND == "claude"
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
@@ -84,6 +87,10 @@ class Settings:
 
     # How creative the answer-writer is. Low = factual & grounded (what we want).
     LLM_TEMPERATURE = 0.2
+    # Hard cap on answer length -> prevents runaway repetition loops.
+    LLM_MAX_TOKENS = 700
+    # Penalize repeated tokens a bit, so weaker models don't get stuck looping.
+    LLM_FREQUENCY_PENALTY = 0.3
 
 
 settings = Settings()

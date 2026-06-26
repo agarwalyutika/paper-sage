@@ -27,20 +27,32 @@ class GroqProvider:
                 "GROQ_API_KEY is not set. Get a free key at https://console.groq.com "
                 "and put it in your .env file (see .env.example)."
             )
-        from groq import Groq
-        self.client = Groq(api_key=settings.GROQ_API_KEY)
-        self.model = settings.GROQ_MODEL
+        import groq
+        self._groq = groq
+        self.client = groq.Groq(api_key=settings.GROQ_API_KEY)
+        # Try the strong model first, then fall back if it's rate-limited.
+        self.models = [settings.GROQ_MODEL, settings.GROQ_FALLBACK_MODEL]
 
     def generate(self, system: str, user: str) -> str:
-        resp = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            temperature=settings.LLM_TEMPERATURE,
-        )
-        return resp.choices[0].message.content
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+        last_err = None
+        for model in self.models:
+            try:
+                resp = self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=settings.LLM_TEMPERATURE,
+                    max_tokens=settings.LLM_MAX_TOKENS,        # cap length (no runaway loops)
+                    frequency_penalty=settings.LLM_FREQUENCY_PENALTY,  # discourage repetition
+                )
+                return resp.choices[0].message.content
+            except self._groq.RateLimitError as e:
+                last_err = e          # this model is throttled -> try the next one
+                continue
+        raise last_err               # all models throttled
 
 
 class ClaudeProvider:
