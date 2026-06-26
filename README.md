@@ -31,9 +31,13 @@ facts).
 - **Grounded generation** — answers strictly from retrieved passages, never outside knowledge
 - **Citation enforcement + validation** — every claim cites `[n]`; invalid citations are flagged
 - **Honest refusal** — says "not enough information" instead of bluffing
+- **Agentic router** — an LLM decides per message: just chat (greetings, "who are you") vs. retrieve-and-cite
+- **Conversational chat with memory** — multi-turn follow-ups ("what about its limitations?") via question condensing
+- **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
+- **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag
 - **100% open-source & free** — open models for embeddings/reranking, free Groq tier for generation
-- **Streamlit UI** — clickable demo with example questions and expandable source cards
+- **Streamlit UI** — chat interface with a 📎 attach button and expandable source cards
 
 ---
 
@@ -119,11 +123,13 @@ streamlit run app/app.py
 ```
 agentic-rag-ml-papers/
 ├─ src/
-│  ├─ ingestion/   fetch.py, chunk.py        # download + curate + chunk papers
-│  ├─ retrieval/   build_index.py, search.py # hybrid search + reranking
-│  ├─ generation/  provider.py, answer.py    # swappable LLM + cited answers
-│  ├─ citations/   validator.py              # citation validation
-│  └─ config.py                              # all settings in one place
+│  ├─ ingestion/   fetch.py, chunk.py             # download + curate + chunk papers
+│  ├─ retrieval/   build_index.py, search.py,     # hybrid search + reranking
+│  │               uploaded_docs.py               # in-memory search over uploaded files
+│  ├─ generation/  provider.py, answer.py         # swappable LLM + cited answers
+│  ├─ citations/   validator.py                   # citation validation
+│  ├─ chat/        store.py, conversation.py       # persistent sessions + multi-turn router
+│  └─ config.py                                   # all settings in one place
 ├─ app/            app.py                     # Streamlit UI
 ├─ notebooks/      embed_on_colab.ipynb       # GPU embedding
 ├─ evals/                                     # evaluation (planned)
@@ -134,10 +140,10 @@ agentic-rag-ml-papers/
 
 ## 🗺️ Roadmap
 
+- [x] **Conversational chat + persistent sessions** — multi-turn follow-ups, saved chat history
+- [x] **Upload-your-own-documents** — ask questions about your own PDFs/reports
 - [ ] **Evaluation pipeline** — Ragas/DeepEval metrics + a vector-only vs hybrid vs +rerank ablation table
 - [ ] **Fine-tuned reranker** — domain-tune the reranker on the corpus; report nDCG@10 before/after
-- [ ] **Upload-your-own-documents** — ask questions about your own PDFs/reports
-- [ ] **Conversational chat** — multi-turn with follow-up questions
 - [ ] **Web search** — optionally cite live web pages alongside papers
 - [ ] **Next.js front end** — production full-stack UI
 

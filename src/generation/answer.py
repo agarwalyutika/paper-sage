@@ -34,17 +34,34 @@ def build_user_prompt(question: str, passages: list[dict]) -> str:
     for i, p in enumerate(passages, 1):
         # Each source shows its number, paper title, arXiv id, and the text snippet.
         blocks.append(
-            f"[{i}] (from \"{p['title']}\", arXiv:{p['arxiv_id']})\n{p['text']}"
+            f"[{i}] (from \"{p['title']}\", {p['arxiv_id']})\n{p['text']}"
         )
     sources = "\n\n".join(blocks)
     return f"SOURCES:\n{sources}\n\nQUESTION: {question}\n\nGrounded, cited answer:"
 
 
+def format_history(history: list[dict], max_turns: int = 4, max_chars: int = 400) -> str:
+    """Format the last few conversation turns as context for a follow-up answer."""
+    recent = history[-max_turns:]
+    lines = []
+    for m in recent:
+        who = "User" if m["role"] == "user" else "Assistant"
+        lines.append(f"{who}: {m['content'][:max_chars]}")
+    return "CONVERSATION SO FAR:\n" + "\n".join(lines)
+
+
 def generate_answer(question: str, passages: list[dict],
-                    provider: LLMProvider | None = None) -> dict:
-    """Produce an answer + the list of sources it was allowed to use."""
+                    provider: LLMProvider | None = None,
+                    history: list[dict] | None = None) -> dict:
+    """Produce an answer + the list of sources it was allowed to use.
+
+    If `history` (previous turns) is given, it's added as context so follow-up
+    questions are answered coherently within the conversation.
+    """
     provider = provider or get_provider()
     user_prompt = build_user_prompt(question, passages)
+    if history:
+        user_prompt = format_history(history) + "\n\n" + user_prompt
     answer_text = provider.generate(SYSTEM_PROMPT, user_prompt)
 
     # Pair each passage with its citation number so the UI can render sources.
