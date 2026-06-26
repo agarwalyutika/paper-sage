@@ -18,6 +18,11 @@ uvicorn==0.32.0              # runs the FastAPI server
 streamlit==1.39.0            # the clickable UI you will demo
 pydantic==2.9.2              # typed request/response shapes + validation
 
+# --- Research Map (2D paper visualization) ---
+scikit-learn                 # t-SNE projection + KMeans clustering
+plotly                       # interactive scatter-map in the UI
+pandas                       # dataframes for the map
+
 # --- Utilities ---
 tqdm==4.66.5                 # progress bars while downloading/indexing
 
