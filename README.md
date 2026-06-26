@@ -36,6 +36,7 @@ facts).
 - **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
 - **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
 - **Research Map** — an interactive 2D map of all 200 papers (t-SNE over the embeddings + KMeans topics); click a dot to open the paper. Zero extra LLM calls
+- **Auto-diagrams** — turn any answer into a Mermaid concept flowchart on demand (one click, rendered inline)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag
 - **100% open-source & free** — open models for embeddings/reranking, free Groq tier for generation
 - **Streamlit UI** — chat interface with a 📎 attach button and expandable source cards

@@ -8,6 +8,7 @@ Two views (sidebar selector):
 Run it (from the project root) with:
     streamlit run app/app.py
 """
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from src.config import DATA_DIR
 from src.retrieval.search import Retriever
@@ -22,6 +24,7 @@ from src.retrieval.uploaded_docs import UploadedIndex
 from src.chat import store
 from src.chat.conversation import answer_in_conversation
 from src.citations.validator import validate_citations
+from src.explore.diagram import generate_mermaid
 
 st.set_page_config(page_title="PaperSage", page_icon="📚", layout="wide")
 
@@ -42,6 +45,31 @@ def load_map() -> list[dict]:
 def load_meta() -> dict:
     return {p["arxiv_id"]: p
             for p in json.loads((DATA_DIR / "papers_meta.json").read_text(encoding="utf-8"))}
+
+
+def render_mermaid(code: str) -> None:
+    """Render a Mermaid diagram inline using mermaid.js (from a CDN, client-side)."""
+    html = f"""
+    <div class="mermaid" style="background:#0e1117;color:#fafafa">{code}</div>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({{startOnLoad:true, theme:"dark", securityLevel:"loose"}});</script>
+    """
+    components.html(html, height=480, scrolling=True)
+
+
+def diagram_widget(answer: str, key: str) -> None:
+    """A 'Show concept diagram' button that generates + renders a Mermaid diagram on demand."""
+    h = hashlib.md5(answer.encode("utf-8")).hexdigest()
+    cache = st.session_state.setdefault("diagrams", {})
+    if st.button("🗺️ Show concept diagram", key=key):
+        with st.spinner("Drawing diagram…"):
+            try:
+                cache[h] = generate_mermaid(answer)
+            except Exception as e:
+                cache[h] = None
+                st.warning(f"Couldn't generate a diagram right now: {e}")
+    if cache.get(h):
+        render_mermaid(cache[h])
 
 
 def render_sources(answer_text: str, sources: list[dict]) -> None:
@@ -115,11 +143,12 @@ def render_chat_view() -> None:
     if not history:
         st.info("👋 Ask me anything about the ML papers — e.g. "
                 "*\"How can multi-agent systems improve RAG privacy?\"*")
-    for m in history:
+    for i, m in enumerate(history):
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
             if m["role"] == "assistant" and m["sources"]:
                 render_sources(m["content"], m["sources"])
+                diagram_widget(m["content"], key=f"dia_{sid}_{i}")
 
     user_input = st.chat_input(
         "Ask about the papers…  (📎 attach a PDF to ask about your own file)",
