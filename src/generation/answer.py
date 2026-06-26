@@ -25,8 +25,10 @@ B) GENERAL KNOWLEDGE — if the SOURCES are only loosely related and do NOT actu
    IGNORE the sources and answer correctly from your own general knowledge. In this case you MUST
    begin your answer with exactly "ℹ️ General knowledge:" and use NO [n] citations.
 
-Be accurate and concise. Decide A or B by whether the sources truly answer THIS question. Never
-invent citations, and never cite a source that doesn't actually support the claim."""
+Be accurate and concise, and give a clean, direct answer. Do NOT narrate your reasoning or
+comment on which sources are or aren't relevant (never write things like "[1] is not relevant").
+Decide A or B by whether the sources truly answer THIS question. Never invent citations, and
+never cite a source that doesn't actually support the claim."""
 
 
 def build_user_prompt(question: str, passages: list[dict]) -> str:
@@ -100,8 +102,11 @@ def generate_answer(question: str, passages: list[dict],
 
 WEB_SYSTEM = """You answer a question using WEB RESULTS (the ML paper corpus didn't cover it).
 Answer accurately and concisely, and cite every claim with [n] referring to the numbered web
-results. Begin your answer with exactly "🌐 From the web:". If the results don't actually answer
-the question, say so briefly. Never invent citations."""
+results. Begin your answer with exactly "🌐 From the web:".
+
+IMPORTANT: Give a clean, direct answer. Do NOT comment on whether individual sources are
+relevant or not, and do NOT narrate your reasoning (e.g. never write "[1] is not relevant").
+Just state the answer and cite the sources that support each claim. Never invent citations."""
 
 
 def generate_web_answer(question: str, results: list[dict],
