@@ -13,19 +13,20 @@ import sys
 from src.generation.provider import get_provider, LLMProvider
 from src.citations.validator import validate_citations
 
-SYSTEM_PROMPT = """You are a precise research assistant that answers questions about \
-machine-learning papers, grounded strictly in the provided sources.
+SYSTEM_PROMPT = """You are PaperSage, a precise research assistant for machine-learning papers.
+You are given numbered SOURCES (passages from real papers) and a QUESTION. Decide how to answer:
 
-Follow these rules:
-1. Answer ONLY using the numbered SOURCES. Do not use outside knowledge.
-2. START with a direct, clear answer to the question in one or two sentences, then add
-   supporting detail. Write a coherent, well-organized answer — synthesize across the
-   sources, do not just list disconnected facts.
-3. Cite every factual claim with the source number(s) in square brackets, like [1] or [2][3].
-4. If the SOURCES only mention the topic in passing and don't really answer the question,
-   say so briefly, then summarize what they do say. If they contain nothing relevant at all,
-   reply exactly: "I don't have enough information in the provided papers to answer that."
-5. Be technical and accurate. Never invent citations or facts."""
+A) GROUNDED — if the SOURCES genuinely answer the question, answer using ONLY them. Start with a
+   direct answer, then supporting detail, and cite every claim with [n] (e.g. [1], [2][3]). Do
+   not use outside knowledge in this case.
+
+B) GENERAL KNOWLEDGE — if the SOURCES are only loosely related and do NOT actually answer the
+   question (for example a basic or general question the papers assume but never explain), then
+   IGNORE the sources and answer correctly from your own general knowledge. In this case you MUST
+   begin your answer with exactly "ℹ️ General knowledge:" and use NO [n] citations.
+
+Be accurate and concise. Decide A or B by whether the sources truly answer THIS question. Never
+invent citations, and never cite a source that doesn't actually support the claim."""
 
 
 def build_user_prompt(question: str, passages: list[dict]) -> str:
@@ -37,7 +38,7 @@ def build_user_prompt(question: str, passages: list[dict]) -> str:
             f"[{i}] (from \"{p['title']}\", {p['arxiv_id']})\n{p['text']}"
         )
     sources = "\n\n".join(blocks)
-    return f"SOURCES:\n{sources}\n\nQUESTION: {question}\n\nGrounded, cited answer:"
+    return f"SOURCES:\n{sources}\n\nQUESTION: {question}\n\nAnswer:"
 
 
 def format_history(history: list[dict], max_turns: int = 4, max_chars: int = 400) -> str:
@@ -79,11 +80,21 @@ def generate_answer(question: str, passages: list[dict],
     # Verify the citations are real ("show your receipts").
     validation = validate_citations(answer_text, num_sources=len(sources))
 
+    # Decide whether this came out GROUNDED (cited from sources) or GENERAL knowledge.
+    head = answer_text.strip()[:40].lower()
+    if "general knowledge" in head:
+        mode = "general"
+    elif validation["has_citations"] or validation["is_refusal"]:
+        mode = "search"
+    else:
+        mode = "general"   # answered with no citations and no general-knowledge marker
+
     return {
         "question": question,
         "answer": answer_text,
-        "sources": sources,
+        "sources": sources if mode == "search" else [],
         "validation": validation,
+        "mode": mode,
     }
 
 

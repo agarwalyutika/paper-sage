@@ -89,10 +89,9 @@ def answer_in_conversation(history: list[dict], message: str,
         reply = chat_reply(history, message, provider)
         return {"question": message, "answer": reply, "sources": [], "mode": "chat"}
 
-    # research question -> full RAG
+    # research question -> retrieve, then let generate_answer decide grounded vs general
     standalone = condense_question(history, message, provider)
     passages = search_fn(standalone)
     result = generate_answer(message, passages, provider=provider, history=history)
-    result["mode"] = "search"
-    result["standalone_query"] = standalone
+    result["standalone_query"] = standalone   # mode is set by generate_answer
     return result

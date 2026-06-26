@@ -184,10 +184,16 @@ def render_chat_view() -> None:
                 retriever = load_retriever()
                 search_fn = uidx.search if use_up else retriever.search
                 result = answer_in_conversation(history, prompt, search_fn)
-            st.markdown(result["answer"])
+            # Make sure general-knowledge answers are always clearly labeled.
+            answer_text = result["answer"]
+            if (result.get("mode") == "general"
+                    and "general knowledge" not in answer_text[:40].lower()):
+                answer_text = ("ℹ️ *General knowledge — not grounded in your paper "
+                               "corpus.*\n\n" + answer_text)
+            st.markdown(answer_text)
             if result.get("mode") == "search":
                 render_sources(result["answer"], result["sources"])
-        store.add_message(sid, "assistant", result["answer"], sources=result["sources"])
+        store.add_message(sid, "assistant", answer_text, sources=result["sources"])
         st.rerun()
 
 
