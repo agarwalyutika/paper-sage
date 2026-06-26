@@ -90,6 +90,21 @@ Hybrid retrieval + reranking lifts **nDCG@10 from 0.60 → 0.89 (+48%)** and **H
 > bias applies equally to all three modes, so the **relative comparison is fair** — the
 > reranking gain is real.*
 
+### Fine-tuned reranker (Phase 2)
+
+I fine-tuned the BGE cross-encoder on **249 in-domain (question → passage) pairs** with
+BM25-mined **hard negatives** (trained on Colab GPU; eval chunks excluded — no leakage).
+Re-running the same held-out benchmark:
+
+| Reranker | Hit@1 | Hit@3 | MRR | nDCG@10 |
+|---|---|---|---|---|
+| Base BGE | 0.76 | 0.95 | 0.85 | 0.88 |
+| **Fine-tuned** | **0.83** | **0.96** | **0.89** | **0.91** |
+
+Fine-tuning lifted **Hit@1 from 76% → 83% (+8%)** and nDCG@10 to **0.91** — the correct
+passage lands at rank #1 more often, with no regression on any metric. Reproduce with
+`python -m evals.compare_reranker`.
+
 ## 🚀 Setup
 
 ```bash
@@ -163,7 +178,7 @@ agentic-rag-ml-papers/
 - [x] **Conversational chat + persistent sessions** — multi-turn follow-ups, saved chat history
 - [x] **Upload-your-own-documents** — ask questions about your own PDFs/reports
 - [x] **Evaluation pipeline** — Hit@k / MRR / nDCG@10 across vector-only vs hybrid vs +rerank (ablation table above)
-- [ ] **Fine-tuned reranker** — domain-tune the reranker on the corpus; report nDCG@10 before/after
+- [x] **Fine-tuned reranker** — domain-tuned the cross-encoder; Hit@1 76% → 83%, nDCG@10 → 0.91 (see above)
 - [ ] **Web search** — optionally cite live web pages alongside papers
 - [ ] **Next.js front end** — production full-stack UI
 

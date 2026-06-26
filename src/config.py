@@ -56,6 +56,9 @@ class Settings:
     # --- Models (small on purpose, so CPU query-time stays fast) ---
     EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"      # text -> vector
     RERANKER_MODEL = "BAAI/bge-reranker-base"       # re-scores candidates for precision
+    # Automatically use the fine-tuned reranker if it has been trained + placed here.
+    if (PROJECT_ROOT / "models" / "bge-reranker-base-ft").exists():
+        RERANKER_MODEL = str(PROJECT_ROOT / "models" / "bge-reranker-base-ft")
 
     # --- Vector DB ---
     QDRANT_COLLECTION = "ml_papers"
