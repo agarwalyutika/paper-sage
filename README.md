@@ -70,6 +70,26 @@ arXiv papers ──► chunk ──► embed (BGE, on GPU) ──► [Qdrant vec
 
 ---
 
+## 📊 Retrieval evaluation
+
+An automatic benchmark of **80 questions** (each generated from a known source passage,
+so the correct answer is known). Measured across three retrieval configurations — uses
+**no LLM tokens** (pure retrieval). Each component earns its place:
+
+| Mode | Hit@1 | Hit@3 | Hit@10 | MRR | nDCG@10 |
+|---|---|---|---|---|---|
+| Vector-only | 0.45 | 0.63 | 0.76 | 0.55 | 0.60 |
+| + BM25 (hybrid, RRF) | 0.56 | 0.85 | 0.93 | 0.70 | 0.75 |
+| **+ Cross-encoder rerank** | **0.78** | **0.95** | **0.96** | **0.86** | **0.89** |
+
+Hybrid retrieval + reranking lifts **nDCG@10 from 0.60 → 0.89 (+48%)** and **Hit@1 from
+45% → 78%** over vector-only. Reproduce with `python -m evals.run_eval`.
+
+> *Note: this is a **synthetic** benchmark (questions auto-generated from passages), so the
+> absolute scores are likely a bit optimistic vs. human-written questions. The synthetic
+> bias applies equally to all three modes, so the **relative comparison is fair** — the
+> reranking gain is real.*
+
 ## 🚀 Setup
 
 ```bash
@@ -142,7 +162,7 @@ agentic-rag-ml-papers/
 
 - [x] **Conversational chat + persistent sessions** — multi-turn follow-ups, saved chat history
 - [x] **Upload-your-own-documents** — ask questions about your own PDFs/reports
-- [ ] **Evaluation pipeline** — Ragas/DeepEval metrics + a vector-only vs hybrid vs +rerank ablation table
+- [x] **Evaluation pipeline** — Hit@k / MRR / nDCG@10 across vector-only vs hybrid vs +rerank (ablation table above)
 - [ ] **Fine-tuned reranker** — domain-tune the reranker on the corpus; report nDCG@10 before/after
 - [ ] **Web search** — optionally cite live web pages alongside papers
 - [ ] **Next.js front end** — production full-stack UI
