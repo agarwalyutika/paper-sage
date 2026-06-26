@@ -8,7 +8,8 @@ sentence-transformers==3.2.1 # turns text into vectors (embeddings) + reranker m
 rank-bm25==0.2.2             # classic keyword search (the BM25 half of "hybrid")
 
 # --- Generation (writing the answer) ---
-groq>=1.5.0                  # free hosted Llama API client (the default LLM backend)
+groq>=1.5.0                  # free hosted Llama API client (a default LLM backend)
+google-genai                 # Google Gemini client (free tier, strong; LLM_BACKEND=gemini)
 anthropic==0.39.0            # Claude API client (optional backend)
 python-dotenv==1.0.1         # loads secret API keys from a .env file (kept out of git)
 

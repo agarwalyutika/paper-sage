@@ -88,6 +88,10 @@ class Settings:
     # Ollama (optional, fully local) -- used only if LLM_BACKEND == "ollama"
     OLLAMA_MODEL = "llama3.2:3b"
 
+    # Gemini (free tier, strong, generous limits) -- used if LLM_BACKEND == "gemini"
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+    GEMINI_MODEL = "gemini-2.0-flash"
+
     # How creative the answer-writer is. Low = factual & grounded (what we want).
     LLM_TEMPERATURE = 0.2
     # Hard cap on answer length -> prevents runaway repetition loops.

@@ -95,13 +95,45 @@ class OllamaProvider:
         return resp["message"]["content"]
 
 
+class GeminiProvider:
+    """Free, strong, hosted Google Gemini. Used only if LLM_BACKEND='gemini'."""
+
+    def __init__(self) -> None:
+        if not settings.GOOGLE_API_KEY:
+            raise RuntimeError(
+                "GOOGLE_API_KEY is not set. Get a free key at "
+                "https://aistudio.google.com/apikey and put it in your .env file."
+            )
+        from google import genai
+        from google.genai import types
+        self._types = types
+        self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
+        self.model = settings.GEMINI_MODEL
+
+    def generate(self, system: str, user: str) -> str:
+        resp = self.client.models.generate_content(
+            model=self.model,
+            contents=user,
+            config=self._types.GenerateContentConfig(
+                system_instruction=system,
+                temperature=settings.LLM_TEMPERATURE,
+                max_output_tokens=settings.LLM_MAX_TOKENS,
+            ),
+        )
+        return resp.text or ""
+
+
 def get_provider() -> LLMProvider:
     """Factory: return the provider chosen in config. This is the ONLY swap point."""
     backend = settings.LLM_BACKEND.lower()
     if backend == "groq":
         return GroqProvider()
+    if backend == "gemini":
+        return GeminiProvider()
     if backend == "claude":
         return ClaudeProvider()
     if backend == "ollama":
         return OllamaProvider()
-    raise ValueError(f"Unknown LLM_BACKEND: {backend!r} (use 'groq', 'claude', or 'ollama').")
+    raise ValueError(
+        f"Unknown LLM_BACKEND: {backend!r} (use 'groq', 'gemini', 'claude', or 'ollama')."
+    )
