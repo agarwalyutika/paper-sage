@@ -37,7 +37,7 @@ facts).
 - **Conversational chat with memory** — multi-turn follow-ups ("what about its limitations?") via question condensing
 - **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
 - **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
-- **Paper comparison** — pick 2–4 corpus papers **and/or upload your own PDFs**, and get a detailed LLM-synthesized side-by-side comparison table (problem, method, novelty, dataset, results, strengths, limitations) — multi-document synthesis
+- **Paper comparison** — pick 2–4 corpus papers **and/or upload your own PDFs**, and get a detailed LLM-synthesized side-by-side comparison table (problem, method, novelty, dataset, results, strengths, limitations) — multi-document synthesis, with a **follow-up chat** about the comparison
 - **Implementation-code generation** — ask *"implement this loss/algorithm in PyTorch"* and it generates runnable code grounded in the paper's equations, with source-citing comments
 - **Quiz & study generator** — turn any paper (corpus or uploaded) into MCQs, flashcards, coding exercises, or interview questions (structured JSON → interactive cards with hidden answers)
 - **Find Novelty** — describe a research idea; it retrieves related work and analyzes *similar work · what's already done · research gaps · novel contribution ideas* (RAG applied to literature gap-analysis), then lets you **chat about it** with follow-up questions. Analyses + their chats are saved.

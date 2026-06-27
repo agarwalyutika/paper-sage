@@ -103,6 +103,28 @@ def render_sources(answer_text: str, sources: list[dict]) -> None:
                 st.caption(s["text"][:320].strip() + "…")
 
 
+def followup_chat(key: str, context: str, sources: list[dict]) -> None:
+    """Reusable follow-up chat for ANY feature, grounded in `context` + `sources`.
+    `key` namespaces this chat in session state (so Compare and Quiz don't collide)."""
+    msgs = st.session_state.setdefault(f"{key}_chat", [])
+    st.markdown("#### 💬 Ask a follow-up")
+    for m in msgs:
+        with st.chat_message(m["role"]):
+            st.markdown(m["content"])
+    q = st.chat_input("Ask about this…", key=f"{key}_input")
+    if q:
+        msgs.append({"role": "user", "content": q})
+        with st.chat_message("user"):
+            st.markdown(q)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking…"):
+                from src.explore.discuss import discuss
+                ans = discuss(context, sources, msgs[:-1], q)
+            st.markdown(ans)
+        msgs.append({"role": "assistant", "content": ans})
+        st.rerun()
+
+
 # =================================================================== CHAT VIEW
 def render_chat_view() -> None:
     if "session_id" not in st.session_state:
@@ -280,13 +302,10 @@ def render_compare_view() -> None:
                                type=["pdf"], accept_multiple_files=True)
 
     total = len(picked) + (len(uploads) if uploads else 0)
-    if total < 2:
-        st.info("Select and/or upload at least 2 papers total to compare.")
-        return
     if total > 4:
         st.warning("Comparing up to 4 papers works best — using the first 4.")
 
-    if st.button("⚖️  Compare", type="primary"):
+    if total >= 2 and st.button("⚖️  Compare", type="primary"):
         from src.explore.compare import build_corpus_papers, upload_context, compare
         with st.spinner("Reading the papers and building a detailed comparison…"):
             papers = build_corpus_papers([title_to_id[t] for t in picked])
@@ -295,6 +314,14 @@ def render_compare_view() -> None:
                                "context": upload_context(f.name, f.getvalue()),
                                "url": ""})
             res = compare(papers[:4])
+        st.session_state.compare_result = res
+        st.session_state.compare_chat = []          # fresh chat for a new comparison
+    elif total < 2:
+        st.info("Select and/or upload at least 2 papers total to compare.")
+
+    # Render the (stored) comparison + a follow-up chat about it.
+    res = st.session_state.get("compare_result")
+    if res:
         st.markdown(res["table"])
         st.markdown("**Papers compared:**")
         for p in res["papers"]:
@@ -302,6 +329,8 @@ def render_compare_view() -> None:
                 st.markdown(f"- [{p['title']}]({p['url']})")
             else:
                 st.markdown(f"- {p['title']}  *(your upload)*")
+        st.markdown("---")
+        followup_chat("compare", res["table"], res["papers"])
 
 
 # ===================================================================== QUIZ VIEW
@@ -369,11 +398,20 @@ def render_quiz_view() -> None:
     if st.button("🎓  Generate", type="primary"):
         with st.spinner(f"Generating {qtype} from “{paper_name[:50]}”…"):
             res = generate_quiz(context, qtype, n)
+        st.session_state.quiz_result = {"res": res, "qtype": qtype,
+                                        "paper": paper_name, "context": context}
+        st.session_state.quiz_chat = []
+
+    qr = st.session_state.get("quiz_result")
+    if qr:
+        res = qr["res"]
         if res["items"]:
-            _render_quiz_items(qtype, res["items"])
+            _render_quiz_items(qr["qtype"], res["items"])
         else:
             st.warning("Couldn't parse the output cleanly — showing it as text:")
             st.markdown(res["raw"])
+        st.markdown("---")
+        followup_chat("quiz", res["raw"], [{"title": qr["paper"], "context": qr["context"]}])
 
 
 # ================================================================== NOVELTY VIEW
