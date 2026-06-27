@@ -45,6 +45,13 @@ def init_db() -> None:
                 created_at  TEXT NOT NULL,
                 FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
             );
+            CREATE TABLE IF NOT EXISTS novelty (
+                id          TEXT PRIMARY KEY,
+                idea        TEXT NOT NULL,
+                analysis    TEXT NOT NULL,
+                sources     TEXT,                   -- JSON list of related-paper dicts
+                created_at  TEXT NOT NULL
+            );
             """
         )
 
@@ -122,6 +129,45 @@ def get_messages(session_id: str) -> list[dict]:
             "sources": json.loads(r["sources"]) if r["sources"] else [],
         })
     return out
+
+
+# ---------------------------- Novelty analyses ----------------------------
+def save_novelty(idea: str, analysis: str, sources: list[dict] | None = None) -> str:
+    """Persist a Find-Novelty analysis so it can be reloaded later."""
+    nid = str(uuid.uuid4())
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO novelty (id, idea, analysis, sources, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (nid, idea, analysis,
+             json.dumps(sources) if sources is not None else None, _now()),
+        )
+    return nid
+
+
+def list_novelty() -> list[dict]:
+    """Saved analyses, newest first (for the dropdown)."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT id, idea, created_at FROM novelty ORDER BY created_at DESC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_novelty(nid: str) -> dict | None:
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT idea, analysis, sources FROM novelty WHERE id = ?", (nid,)
+        ).fetchone()
+    if not r:
+        return None
+    return {"idea": r["idea"], "analysis": r["analysis"],
+            "sources": json.loads(r["sources"]) if r["sources"] else []}
+
+
+def delete_novelty(nid: str) -> None:
+    with _connect() as conn:
+        conn.execute("DELETE FROM novelty WHERE id = ?", (nid,))
 
 
 # Make sure the database + tables exist as soon as this module is imported.

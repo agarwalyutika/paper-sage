@@ -379,9 +379,30 @@ def render_quiz_view() -> None:
 # ================================================================== NOVELTY VIEW
 def render_novelty_view() -> None:
     st.subheader("💡 Find Novelty")
-    st.caption("Describe your research idea — PaperSage finds related work in the corpus, what's "
-               "already been done, the gaps, and novel directions you could take.")
+    st.caption("Describe a research idea — PaperSage finds related work, what's already been done, "
+               "the gaps, and novel directions. **Past analyses are saved**, so you never retype.")
 
+    # --- Memory: a dropdown of past analyses (reloading one costs no tokens) ---
+    saved = store.list_novelty()
+    if saved:
+        labels = {"➕ New analysis": None}
+        for s in saved:
+            labels[f"{s['idea'][:55]}  ·  {s['created_at'][:10]}"] = s["id"]
+        choice = st.selectbox("📚 Your saved analyses:", list(labels))
+        nid = labels[choice]
+        if nid:                       # showing a previously-saved analysis
+            data = store.get_novelty(nid)
+            st.markdown(f"**💡 Idea:** {data['idea']}")
+            st.markdown(data["analysis"])
+            if data["sources"]:
+                st.markdown("---")
+                render_sources(data["analysis"], data["sources"])
+            if st.button("🗑  Delete this analysis"):
+                store.delete_novelty(nid)
+                st.rerun()
+            return
+
+    # --- New analysis ---
     idea = st.text_area("Your research idea:", height=100,
                         placeholder="e.g. I want to detect diabetic retinopathy using Vision Transformers")
     if st.button("💡  Analyze novelty", type="primary"):
@@ -393,6 +414,7 @@ def render_novelty_view() -> None:
             passages = retriever.search(idea, top_k=10)
             from src.explore.novelty import find_novelty
             res = find_novelty(idea, passages)
+        store.save_novelty(idea, res["analysis"], res["sources"])   # <- persists it
         st.markdown(res["analysis"])
         st.markdown("---")
         render_sources(res["analysis"], res["sources"])
