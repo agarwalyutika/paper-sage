@@ -376,10 +376,32 @@ def render_quiz_view() -> None:
             st.markdown(res["raw"])
 
 
+# ================================================================== NOVELTY VIEW
+def render_novelty_view() -> None:
+    st.subheader("💡 Find Novelty")
+    st.caption("Describe your research idea — PaperSage finds related work in the corpus, what's "
+               "already been done, the gaps, and novel directions you could take.")
+
+    idea = st.text_area("Your research idea:", height=100,
+                        placeholder="e.g. I want to detect diabetic retinopathy using Vision Transformers")
+    if st.button("💡  Analyze novelty", type="primary"):
+        if not idea.strip():
+            st.warning("Describe your idea first.")
+            return
+        retriever = load_retriever()
+        with st.spinner("Searching related work and analyzing novelty…"):
+            passages = retriever.search(idea, top_k=10)
+            from src.explore.novelty import find_novelty
+            res = find_novelty(idea, passages)
+        st.markdown(res["analysis"])
+        st.markdown("---")
+        render_sources(res["analysis"], res["sources"])
+
+
 # ===================================================================== DISPATCH
 with st.sidebar:
     st.title("📚 PaperSage")
-    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz"],
+    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"],
                     label_visibility="collapsed")
     st.divider()
 
@@ -389,5 +411,7 @@ elif VIEW == "📍 Research Map":
     render_map_view()
 elif VIEW == "⚖️ Compare":
     render_compare_view()
-else:
+elif VIEW == "🎓 Quiz":
     render_quiz_view()
+else:
+    render_novelty_view()
