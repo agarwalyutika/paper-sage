@@ -37,6 +37,7 @@ facts).
 - **Conversational chat with memory** — multi-turn follow-ups ("what about its limitations?") via question condensing
 - **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
 - **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
+- **Paper comparison** — pick 2–4 papers and get an LLM-synthesized side-by-side comparison table (problem, method, dataset, results, strengths, limitations) — multi-document synthesis
 - **Research Map** — an interactive 2D map of all 200 papers (t-SNE over the embeddings + KMeans topics); click a dot to open the paper. Zero extra LLM calls
 - **Auto-diagrams** — turn any answer into a Mermaid concept flowchart on demand (one click, rendered inline)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag

@@ -266,13 +266,41 @@ def render_map_view() -> None:
         st.caption("👆 Click any dot on the map to open its paper.")
 
 
+# ================================================================== COMPARE VIEW
+def render_compare_view() -> None:
+    st.subheader("⚖️ Compare Papers")
+    st.caption("Pick 2–4 papers — PaperSage retrieves from each and synthesizes a "
+               "side-by-side comparison table (problem, method, dataset, results, "
+               "strengths, limitations).")
+
+    meta = load_meta()                              # {arxiv_id: paper}
+    title_to_id = {p["title"]: aid for aid, p in meta.items()}
+    picked = st.multiselect("Papers to compare:", sorted(title_to_id), max_selections=4)
+
+    if len(picked) < 2:
+        st.info("Select at least 2 papers to compare.")
+        return
+    if st.button("⚖️  Compare", type="primary"):
+        ids = [title_to_id[t] for t in picked]
+        with st.spinner("Reading the papers and building the comparison…"):
+            from src.explore.compare import compare_papers
+            res = compare_papers(ids)
+        st.markdown(res["table"])
+        st.markdown("**Papers compared:**")
+        for p in res["papers"]:
+            st.markdown(f"- [{p['title']}]({p['url']})")
+
+
 # ===================================================================== DISPATCH
 with st.sidebar:
     st.title("📚 PaperSage")
-    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map"], label_visibility="collapsed")
+    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare"],
+                    label_visibility="collapsed")
     st.divider()
 
 if VIEW == "💬 Chat":
     render_chat_view()
-else:
+elif VIEW == "📍 Research Map":
     render_map_view()
+else:
+    render_compare_view()
