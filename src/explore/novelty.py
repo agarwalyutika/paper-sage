@@ -52,3 +52,28 @@ def find_novelty(idea: str, passages: list[dict], provider=None) -> dict:
                 "url": p["url"], "text": p["text"]}
                for i, p in enumerate(distinct, 1)]
     return {"analysis": analysis, "sources": sources}
+
+
+DISCUSS_SYSTEM = """You are a research advisor discussing a RESEARCH IDEA and its novelty analysis
+with the user. You have the idea, the related papers (passages), and the analysis so far. Answer
+the user's follow-up clearly and specifically -- grounded in the related papers (cite [n] when you
+use them). If they ask to expand a gap or a novel idea, give concrete, actionable detail. If
+something genuinely isn't in the papers, use general research knowledge but never fabricate
+citations. Be concise."""
+
+
+def discuss_novelty(idea: str, sources: list[dict], analysis: str,
+                    history: list[dict], question: str, provider=None) -> str:
+    """Answer a follow-up question about a novelty analysis, with full context."""
+    provider = provider or get_provider()
+    papers = "\n\n".join(f'[{s["n"]}] (from "{s["title"]}")\n{s.get("text", "")}'
+                         for s in sources)
+    convo = "\n".join(
+        f"{'User' if m['role'] == 'user' else 'Advisor'}: {m['content'][:300]}"
+        for m in history[-4:]
+    )
+    user = (f"RESEARCH IDEA: {idea}\n\nRELATED PAPERS:\n{papers}\n\n"
+            f"NOVELTY ANALYSIS SO FAR:\n{analysis[:1500]}\n\n"
+            + (f"CONVERSATION:\n{convo}\n\n" if convo else "")
+            + f"USER FOLLOW-UP: {question}\n\nAnswer:")
+    return provider.generate(DISCUSS_SYSTEM, user, max_tokens=900)

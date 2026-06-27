@@ -52,6 +52,13 @@ def init_db() -> None:
                 sources     TEXT,                   -- JSON list of related-paper dicts
                 created_at  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS novelty_messages (
+                id          TEXT PRIMARY KEY,
+                novelty_id  TEXT NOT NULL,          -- which analysis this follow-up belongs to
+                role        TEXT NOT NULL,          -- 'user' or 'assistant'
+                content     TEXT NOT NULL,
+                created_at  TEXT NOT NULL
+            );
             """
         )
 
@@ -167,7 +174,28 @@ def get_novelty(nid: str) -> dict | None:
 
 def delete_novelty(nid: str) -> None:
     with _connect() as conn:
+        conn.execute("DELETE FROM novelty_messages WHERE novelty_id = ?", (nid,))
         conn.execute("DELETE FROM novelty WHERE id = ?", (nid,))
+
+
+def add_novelty_message(novelty_id: str, role: str, content: str) -> None:
+    """Append a follow-up message to a novelty analysis's conversation."""
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO novelty_messages (id, novelty_id, role, content, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (str(uuid.uuid4()), novelty_id, role, content, _now()),
+        )
+
+
+def get_novelty_messages(novelty_id: str) -> list[dict]:
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT role, content FROM novelty_messages "
+            "WHERE novelty_id = ? ORDER BY created_at ASC",
+            (novelty_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 # Make sure the database + tables exist as soon as this module is imported.
