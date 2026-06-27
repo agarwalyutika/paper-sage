@@ -14,8 +14,18 @@ from typing import Callable
 
 from src.config import settings
 from src.generation.provider import get_provider, LLMProvider
-from src.generation.answer import generate_answer, generate_web_answer
+from src.generation.answer import generate_answer, generate_web_answer, generate_code
 from src.web.search import web_search
+
+# A code/implementation request -> generate code grounded in the papers.
+CODE_HINTS = ("implement", "in pytorch", "pytorch code", "in python", "to python",
+              "python code", "write code", "code for", "as code", "code this",
+              "in numpy", "in tensorflow")
+
+
+def is_code_request(message: str) -> bool:
+    m = message.lower()
+    return any(h in m for h in CODE_HINTS)
 
 # --- prompts -----------------------------------------------------------------
 ROUTER_SYSTEM = """You are a router. Read the user's latest message (with brief \
@@ -91,9 +101,17 @@ def answer_in_conversation(history: list[dict], message: str,
         reply = chat_reply(history, message, provider)
         return {"question": message, "answer": reply, "sources": [], "mode": "chat"}
 
-    # research question -> retrieve, then let generate_answer decide grounded vs general
+    # research question -> retrieve relevant passages
     standalone = condense_question(history, message, provider)
     passages = search_fn(standalone)
+
+    # Code/implementation request -> generate code grounded in those passages.
+    if is_code_request(message):
+        result = generate_code(message, passages, provider=provider, history=history)
+        result["standalone_query"] = standalone
+        return result
+
+    # Otherwise: let generate_answer decide grounded vs general.
     result = generate_answer(message, passages, provider=provider, history=history)
     result["standalone_query"] = standalone   # mode is set by generate_answer
 

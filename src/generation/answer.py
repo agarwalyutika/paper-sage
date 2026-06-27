@@ -133,6 +133,39 @@ def generate_web_answer(question: str, results: list[dict],
             "validation": validation, "mode": "web"}
 
 
+CODE_SYSTEM = """You are a senior ML engineer. Using the SOURCES (passages from research papers),
+implement what the user asks in clean, correct Python. Use PyTorch for models/losses/layers and
+numpy otherwise.
+
+- Base the implementation on the method/equations described in the SOURCES. Add a short comment
+  citing the source, like `# from [1]`, where you implement a specific part.
+- Include concise docstrings/comments. If the paper omits a detail, make a reasonable assumption
+  and note it in a `# Assumption:` comment.
+- Respond with: one short sentence of intro, then ONE ```python code block, then at most two lines
+  of caveats. Keep it focused and runnable."""
+
+
+def generate_code(question: str, passages: list[dict],
+                  provider: LLMProvider | None = None,
+                  history: list[dict] | None = None) -> dict:
+    """Generate a code implementation grounded in the retrieved paper passages."""
+    provider = provider or get_provider()
+    user_prompt = build_user_prompt(question, passages)
+    if history:
+        user_prompt = format_history(history) + "\n\n" + user_prompt
+    # Code needs more room than the default 700-token cap.
+    answer_text = provider.generate(CODE_SYSTEM, user_prompt, max_tokens=1200)
+
+    sources = [
+        {"n": i, "title": p["title"], "arxiv_id": p["arxiv_id"],
+         "url": p["url"], "text": p["text"]}
+        for i, p in enumerate(passages, 1)
+    ]
+    validation = validate_citations(answer_text, num_sources=len(sources))
+    return {"question": question, "answer": answer_text, "sources": sources,
+            "validation": validation, "mode": "code"}
+
+
 def _demo(question: str) -> None:
     # Lazy import so this file doesn't load the heavy retriever unless run directly.
     from src.retrieval.search import Retriever

@@ -38,6 +38,7 @@ facts).
 - **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
 - **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
 - **Paper comparison** — pick 2–4 corpus papers **and/or upload your own PDFs**, and get a detailed LLM-synthesized side-by-side comparison table (problem, method, novelty, dataset, results, strengths, limitations) — multi-document synthesis
+- **Implementation-code generation** — ask *"implement this loss/algorithm in PyTorch"* and it generates runnable code grounded in the paper's equations, with source-citing comments
 - **Research Map** — an interactive 2D map of all 200 papers (t-SNE over the embeddings + KMeans topics); click a dot to open the paper. Zero extra LLM calls
 - **Auto-diagrams** — turn any answer into a Mermaid concept flowchart on demand (one click, rendered inline)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag
