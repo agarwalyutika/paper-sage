@@ -269,26 +269,39 @@ def render_map_view() -> None:
 # ================================================================== COMPARE VIEW
 def render_compare_view() -> None:
     st.subheader("⚖️ Compare Papers")
-    st.caption("Pick 2–4 papers — PaperSage retrieves from each and synthesizes a "
-               "side-by-side comparison table (problem, method, dataset, results, "
-               "strengths, limitations).")
+    st.caption("Pick papers from the corpus **and/or upload your own PDFs**, then compare. "
+               "PaperSage reads each one and synthesizes a detailed side-by-side table "
+               "(problem, method, novelty, dataset, results, strengths, limitations).")
 
     meta = load_meta()                              # {arxiv_id: paper}
     title_to_id = {p["title"]: aid for aid, p in meta.items()}
-    picked = st.multiselect("Papers to compare:", sorted(title_to_id), max_selections=4)
+    picked = st.multiselect("Corpus papers:", sorted(title_to_id), max_selections=4)
+    uploads = st.file_uploader("…or upload your own PDFs to include:",
+                               type=["pdf"], accept_multiple_files=True)
 
-    if len(picked) < 2:
-        st.info("Select at least 2 papers to compare.")
+    total = len(picked) + (len(uploads) if uploads else 0)
+    if total < 2:
+        st.info("Select and/or upload at least 2 papers total to compare.")
         return
+    if total > 4:
+        st.warning("Comparing up to 4 papers works best — using the first 4.")
+
     if st.button("⚖️  Compare", type="primary"):
-        ids = [title_to_id[t] for t in picked]
-        with st.spinner("Reading the papers and building the comparison…"):
-            from src.explore.compare import compare_papers
-            res = compare_papers(ids)
+        from src.explore.compare import build_corpus_papers, upload_context, compare
+        with st.spinner("Reading the papers and building a detailed comparison…"):
+            papers = build_corpus_papers([title_to_id[t] for t in picked])
+            for f in (uploads or []):
+                papers.append({"title": f.name,
+                               "context": upload_context(f.name, f.getvalue()),
+                               "url": ""})
+            res = compare(papers[:4])
         st.markdown(res["table"])
         st.markdown("**Papers compared:**")
         for p in res["papers"]:
-            st.markdown(f"- [{p['title']}]({p['url']})")
+            if p.get("url"):
+                st.markdown(f"- [{p['title']}]({p['url']})")
+            else:
+                st.markdown(f"- {p['title']}  *(your upload)*")
 
 
 # ===================================================================== DISPATCH

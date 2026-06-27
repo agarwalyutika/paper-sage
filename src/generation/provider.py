@@ -15,7 +15,9 @@ from src.config import settings
 
 class LLMProvider(Protocol):
     """The contract every backend must satisfy."""
-    def generate(self, system: str, user: str) -> str: ...
+    # max_tokens=None means "use the default cap"; a task can ask for more (e.g. a
+    # detailed comparison table) without changing the global default.
+    def generate(self, system: str, user: str, max_tokens: int | None = None) -> str: ...
 
 
 class GroqProvider:
@@ -33,7 +35,7 @@ class GroqProvider:
         # Try the strong model first, then fall back if it's rate-limited.
         self.models = [settings.GROQ_MODEL, settings.GROQ_FALLBACK_MODEL]
 
-    def generate(self, system: str, user: str) -> str:
+    def generate(self, system: str, user: str, max_tokens: int | None = None) -> str:
         messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -45,7 +47,7 @@ class GroqProvider:
                     model=model,
                     messages=messages,
                     temperature=settings.LLM_TEMPERATURE,
-                    max_tokens=settings.LLM_MAX_TOKENS,        # cap length (no runaway loops)
+                    max_tokens=max_tokens or settings.LLM_MAX_TOKENS,   # cap length
                     frequency_penalty=settings.LLM_FREQUENCY_PENALTY,  # discourage repetition
                 )
                 return resp.choices[0].message.content
@@ -65,10 +67,10 @@ class ClaudeProvider:
         self.client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.model = settings.CLAUDE_MODEL
 
-    def generate(self, system: str, user: str) -> str:
+    def generate(self, system: str, user: str, max_tokens: int | None = None) -> str:
         resp = self.client.messages.create(
             model=self.model,
-            max_tokens=1024,
+            max_tokens=max_tokens or settings.LLM_MAX_TOKENS,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
@@ -83,14 +85,16 @@ class OllamaProvider:
         self.client = ollama
         self.model = settings.OLLAMA_MODEL
 
-    def generate(self, system: str, user: str) -> str:
+    def generate(self, system: str, user: str, max_tokens: int | None = None) -> str:
         resp = self.client.chat(
             model=self.model,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            options={"temperature": settings.LLM_TEMPERATURE},
+            # Ollama calls the output cap "num_predict".
+            options={"temperature": settings.LLM_TEMPERATURE,
+                     "num_predict": max_tokens or settings.LLM_MAX_TOKENS},
         )
         return resp["message"]["content"]
 
@@ -110,14 +114,15 @@ class GeminiProvider:
         self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
         self.model = settings.GEMINI_MODEL
 
-    def generate(self, system: str, user: str) -> str:
+    def generate(self, system: str, user: str, max_tokens: int | None = None) -> str:
         resp = self.client.models.generate_content(
             model=self.model,
             contents=user,
             config=self._types.GenerateContentConfig(
                 system_instruction=system,
                 temperature=settings.LLM_TEMPERATURE,
-                max_output_tokens=settings.LLM_MAX_TOKENS,
+                # Gemini calls the output cap "max_output_tokens".
+                max_output_tokens=max_tokens or settings.LLM_MAX_TOKENS,
             ),
         )
         return resp.text or ""
