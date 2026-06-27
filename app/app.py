@@ -38,34 +38,34 @@ _THEME_CSS = """
 #MainMenu, footer {visibility: hidden;}
 [data-testid="stHeader"] {background: transparent;}
 
-/* gradient brand header */
+/* gradient brand header — muted, low-glare */
 .ps-header {
-  background: linear-gradient(100deg, #10b981 0%, #14b8a6 50%, #2dd4bf 100%);
+  background: linear-gradient(100deg, #2b6b5b 0%, #347f6f 100%);
   padding: 20px 26px; border-radius: 16px; margin: 2px 0 16px 0;
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.28);
+  box-shadow: 0 8px 24px rgba(20, 80, 66, 0.18);
 }
-.ps-title { font-size: 30px; font-weight: 800; color: #04201a; letter-spacing: -0.5px; }
-.ps-tag   { font-size: 14px; color: rgba(4,32,26,0.86); margin-top: 3px; }
+.ps-title { font-size: 30px; font-weight: 800; color: #eef6f3; letter-spacing: -0.5px; }
+.ps-tag   { font-size: 14px; color: rgba(238,246,243,0.82); margin-top: 3px; }
 
-/* sidebar nav: turn the radio into pill buttons, gradient the active one */
+/* sidebar nav: turn the radio into pill buttons, soft-tint the active one */
 section[data-testid="stSidebar"] div[role="radiogroup"] label {
-  background: #102420; border: 1px solid #1d3a33; border-radius: 10px;
+  background: #13211d; border: 1px solid #1d3a33; border-radius: 10px;
   padding: 9px 12px; margin-bottom: 7px; transition: all 0.15s ease; width: 100%;
 }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #10b981; }
+section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #3e9d82; }
 section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-  background: linear-gradient(100deg, #10b981, #14b8a6);
-  border-color: transparent; box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+  background: linear-gradient(100deg, #2f7565, #387f70);
+  border-color: transparent; box-shadow: 0 3px 10px rgba(20,80,66,0.22);
 }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #04201a; font-weight: 600; }
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #eef6f3; font-weight: 600; }
 section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }  /* hide the dot */
 
-/* primary buttons: gradient fill */
+/* primary buttons: muted gradient fill */
 .stButton > button[kind="primary"], .stFormSubmitButton > button {
-  background: linear-gradient(100deg, #10b981, #14b8a6);
-  border: none; color: #04201a; font-weight: 700; transition: filter 0.15s ease;
+  background: linear-gradient(100deg, #2f7565, #387f70);
+  border: none; color: #eef6f3; font-weight: 600; transition: filter 0.15s ease;
 }
-.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { filter: brightness(1.08); }
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { filter: brightness(1.1); }
 
 /* example-question chips */
 .stButton > button[kind="secondary"] { border-radius: 10px; border-color: #1d3a33; }
