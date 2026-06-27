@@ -30,6 +30,70 @@ st.set_page_config(page_title="PaperSage", page_icon="📚", layout="wide")
 
 MAP_PATH = DATA_DIR / "research_map.json"
 
+# ----------------------------------------------------------------- VIBRANT THEME
+_THEME_CSS = """
+<style>
+/* hide default Streamlit chrome for a cleaner, app-like feel */
+#MainMenu, footer {visibility: hidden;}
+[data-testid="stHeader"] {background: transparent;}
+
+/* gradient brand header */
+.ps-header {
+  background: linear-gradient(100deg, #a855f7 0%, #6366f1 48%, #22d3ee 100%);
+  padding: 20px 26px; border-radius: 16px; margin: 2px 0 16px 0;
+  box-shadow: 0 10px 30px rgba(124, 108, 255, 0.28);
+}
+.ps-title { font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.ps-tag   { font-size: 14px; color: rgba(255,255,255,0.92); margin-top: 3px; }
+
+/* sidebar nav: turn the radio into pill buttons, gradient the active one */
+section[data-testid="stSidebar"] div[role="radiogroup"] label {
+  background: #16182e; border: 1px solid #2a2d4a; border-radius: 10px;
+  padding: 9px 12px; margin-bottom: 7px; transition: all 0.15s ease; width: 100%;
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #a855f7; }
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+  background: linear-gradient(100deg, #a855f7, #6366f1);
+  border-color: transparent; box-shadow: 0 4px 14px rgba(124,108,255,0.35);
+}
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #fff; font-weight: 600; }
+section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }  /* hide the dot */
+
+/* primary buttons: gradient fill */
+.stButton > button[kind="primary"] {
+  background: linear-gradient(100deg, #a855f7, #6366f1);
+  border: none; font-weight: 600; transition: filter 0.15s ease;
+}
+.stButton > button[kind="primary"]:hover { filter: brightness(1.1); }
+
+/* example-question chips */
+.stButton > button[kind="secondary"] { border-radius: 10px; border-color: #2a2d4a; }
+
+/* chat bubbles + cards: softer, rounded */
+[data-testid="stChatMessage"] { border-radius: 14px; }
+[data-testid="stExpander"] { border-radius: 12px; border-color: #2a2d4a; }
+.stChatInput textarea { border-radius: 12px; }
+</style>
+"""
+
+
+def inject_theme() -> None:
+    st.markdown(_THEME_CSS, unsafe_allow_html=True)
+
+
+def render_header() -> None:
+    st.markdown(
+        '<div class="ps-header">'
+        '<div class="ps-title">📚 PaperSage</div>'
+        '<div class="ps-tag">Cited answers from real ML research papers · '
+        'hybrid retrieval + reranking + grounded generation</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+inject_theme()
+
 
 @st.cache_resource(show_spinner="Loading models + indexes (first time only)...")
 def load_retriever() -> Retriever:
@@ -169,9 +233,17 @@ def render_chat_view() -> None:
                f"**{'📎 your uploaded files' if use_uploads else '📚 the ML paper corpus'}**")
 
     history = store.get_messages(sid)
+    pending = None                       # set if the user clicks an example chip
     if not history:
-        st.info("👋 Ask me anything about the ML papers — e.g. "
-                "*\"How can multi-agent systems improve RAG privacy?\"*")
+        st.info("👋 Ask me anything about the ML papers — or try an example:")
+        examples = [
+            "How can multi-agent systems improve RAG privacy?",
+            "Bi-encoder vs cross-encoder — what's the difference?",
+            "How does LoRA fine-tuning work?",
+        ]
+        for c, ex in zip(st.columns(len(examples)), examples):
+            if c.button(ex, key=f"ex_{ex[:20]}", use_container_width=True):
+                pending = ex
     for i, m in enumerate(history):
         with st.chat_message(m["role"]):
             st.markdown(m["content"])
@@ -183,47 +255,50 @@ def render_chat_view() -> None:
         "Ask about the papers…  (📎 attach a PDF to ask about your own file)",
         accept_file="multiple", file_type=["pdf", "txt", "md"],
     )
-    if user_input:
-        prompt = user_input.text
-        attached = user_input.files
-        if attached:
-            sig = tuple((f.name, f.size) for f in attached)
-            if st.session_state.get("upload_sig") != sig:
-                with st.spinner("Reading and indexing your file(s)…"):
-                    r = load_retriever()
-                    idx = UploadedIndex(r.embedder, r.reranker)
-                    idx.build([(f.name, f.getvalue()) for f in attached])
-                st.session_state.uploaded_index = idx
-                st.session_state.upload_sig = sig
-            st.session_state.use_uploads = True
-        if not prompt:
-            st.rerun()
+    # A question can come from the chat box OR from an example chip.
+    prompt = user_input.text if user_input else (pending or "")
+    attached = user_input.files if user_input else None
+    if not (prompt or attached):
+        return
 
-        uidx = st.session_state.get("uploaded_index")
-        use_up = bool(st.session_state.get("use_uploads") and uidx and uidx.chunks)
-        store.add_message(sid, "user", prompt)
-        current = next((x for x in store.list_sessions() if x["id"] == sid), None)
-        if current and current["title"] == "New chat":
-            store.rename_session(sid, prompt[:40])
-
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking…"):
-                retriever = load_retriever()
-                search_fn = uidx.search if use_up else retriever.search
-                result = answer_in_conversation(history, prompt, search_fn)
-            # Make sure general-knowledge answers are always clearly labeled.
-            answer_text = result["answer"]
-            if (result.get("mode") == "general"
-                    and "general knowledge" not in answer_text[:40].lower()):
-                answer_text = ("ℹ️ *General knowledge — not grounded in your paper "
-                               "corpus.*\n\n" + answer_text)
-            st.markdown(answer_text)
-            if result["sources"]:        # grounded (papers) OR web answer
-                render_sources(result["answer"], result["sources"])
-        store.add_message(sid, "assistant", answer_text, sources=result["sources"])
+    if attached:
+        sig = tuple((f.name, f.size) for f in attached)
+        if st.session_state.get("upload_sig") != sig:
+            with st.spinner("Reading and indexing your file(s)…"):
+                r = load_retriever()
+                idx = UploadedIndex(r.embedder, r.reranker)
+                idx.build([(f.name, f.getvalue()) for f in attached])
+            st.session_state.uploaded_index = idx
+            st.session_state.upload_sig = sig
+        st.session_state.use_uploads = True
+    if not prompt:
         st.rerun()
+
+    uidx = st.session_state.get("uploaded_index")
+    use_up = bool(st.session_state.get("use_uploads") and uidx and uidx.chunks)
+    store.add_message(sid, "user", prompt)
+    current = next((x for x in store.list_sessions() if x["id"] == sid), None)
+    if current and current["title"] == "New chat":
+        store.rename_session(sid, prompt[:40])
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking…"):
+            retriever = load_retriever()
+            search_fn = uidx.search if use_up else retriever.search
+            result = answer_in_conversation(history, prompt, search_fn)
+        # Make sure general-knowledge answers are always clearly labeled.
+        answer_text = result["answer"]
+        if (result.get("mode") == "general"
+                and "general knowledge" not in answer_text[:40].lower()):
+            answer_text = ("ℹ️ *General knowledge — not grounded in your paper "
+                           "corpus.*\n\n" + answer_text)
+        st.markdown(answer_text)
+        if result["sources"]:        # grounded (papers) OR web answer
+            render_sources(result["answer"], result["sources"])
+    store.add_message(sid, "assistant", answer_text, sources=result["sources"])
+    st.rerun()
 
 
 # =================================================================== MAP VIEW
@@ -488,9 +563,12 @@ def render_novelty_view() -> None:
 # ===================================================================== DISPATCH
 with st.sidebar:
     st.title("📚 PaperSage")
+    st.caption("Agentic RAG over ML papers")
     VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"],
                     label_visibility="collapsed")
     st.divider()
+
+render_header()
 
 if VIEW == "💬 Chat":
     render_chat_view()

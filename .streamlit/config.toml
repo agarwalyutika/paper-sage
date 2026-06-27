@@ -1,0 +1,14 @@
+# PaperSage — "Vibrant" theme (dark base, violet→cyan accents).
+# Streamlit reads this automatically; it sets the base palette. The finer
+# polish (gradient header, pill nav, gradient buttons) is CSS injected in app.py.
+[theme]
+base = "dark"
+primaryColor = "#a855f7"               # violet — buttons, sliders, active states
+backgroundColor = "#0d1020"            # near-black main canvas
+secondaryBackgroundColor = "#16182e"   # sidebar / cards / inputs
+textColor = "#ececf5"                  # soft white
+font = "sans serif"
+
+[server]
+# Friendlier for a portfolio demo: don't email-gate, keep file uploads reasonable.
+maxUploadSize = 25
