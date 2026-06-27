@@ -304,10 +304,82 @@ def render_compare_view() -> None:
                 st.markdown(f"- {p['title']}  *(your upload)*")
 
 
+# ===================================================================== QUIZ VIEW
+def _render_quiz_items(qtype: str, items: list[dict]) -> None:
+    if qtype == "MCQs":
+        for i, q in enumerate(items, 1):
+            st.markdown(f"**Q{i}. {q.get('question', '')}**")
+            opts = q.get("options", [])
+            for j, o in enumerate(opts):
+                st.markdown(f"&nbsp;&nbsp;{'ABCD'[j] if j < 4 else j}. {o}")
+            with st.expander("Show answer"):
+                ans = q.get("answer", 0)
+                if isinstance(ans, int) and 0 <= ans < len(opts):
+                    st.success(f"Correct: {'ABCD'[ans]}. {opts[ans]}")
+                if q.get("explanation"):
+                    st.caption(q["explanation"])
+    elif qtype == "Flashcards":
+        for c in items:
+            with st.expander(f"🃏  {c.get('front', '')}"):
+                st.write(c.get("back", ""))
+    elif qtype == "Coding questions":
+        for i, q in enumerate(items, 1):
+            st.markdown(f"**{i}. {q.get('question', '')}**")
+            if q.get("hint"):
+                with st.expander("Hint"):
+                    st.caption(q["hint"])
+    else:  # Interview questions
+        for i, q in enumerate(items, 1):
+            st.markdown(f"**Q{i}. {q.get('question', '')}**")
+            with st.expander("Model answer"):
+                st.write(q.get("answer", ""))
+
+
+def render_quiz_view() -> None:
+    st.subheader("🎓 Quiz & Study")
+    st.caption("Turn any paper into study material. Pick a corpus paper or upload your own, "
+               "choose a format, and generate.")
+
+    meta = load_meta()
+    title_to_id = {p["title"]: aid for aid, p in meta.items()}
+
+    src = st.radio("Paper source:", ["Corpus paper", "Upload a PDF"], horizontal=True)
+    context, paper_name = None, None
+    if src == "Corpus paper":
+        pick = st.selectbox("Pick a paper:", ["—"] + sorted(title_to_id))
+        if pick != "—":
+            from src.explore.compare import build_corpus_papers
+            context = build_corpus_papers([title_to_id[pick]])[0]["context"]
+            paper_name = pick
+    else:
+        up = st.file_uploader("Upload a PDF:", type=["pdf"])
+        if up:
+            from src.explore.compare import upload_context
+            context = upload_context(up.name, up.getvalue())
+            paper_name = up.name
+
+    from src.explore.quiz import QUIZ_TYPES, generate_quiz
+    c1, c2 = st.columns([0.6, 0.4])
+    qtype = c1.radio("Generate:", QUIZ_TYPES, horizontal=True)
+    n = c2.slider("How many:", 3, 8, 5)
+
+    if not context:
+        st.info("Pick or upload a paper first.")
+        return
+    if st.button("🎓  Generate", type="primary"):
+        with st.spinner(f"Generating {qtype} from “{paper_name[:50]}”…"):
+            res = generate_quiz(context, qtype, n)
+        if res["items"]:
+            _render_quiz_items(qtype, res["items"])
+        else:
+            st.warning("Couldn't parse the output cleanly — showing it as text:")
+            st.markdown(res["raw"])
+
+
 # ===================================================================== DISPATCH
 with st.sidebar:
     st.title("📚 PaperSage")
-    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare"],
+    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz"],
                     label_visibility="collapsed")
     st.divider()
 
@@ -315,5 +387,7 @@ if VIEW == "💬 Chat":
     render_chat_view()
 elif VIEW == "📍 Research Map":
     render_map_view()
-else:
+elif VIEW == "⚖️ Compare":
     render_compare_view()
+else:
+    render_quiz_view()
