@@ -61,6 +61,17 @@ def init_db() -> None:
             );
             """
         )
+        # Migration: chats + analyses are now owned by a user. Add the column to
+        # existing databases that predate accounts (old rows get user_id = NULL).
+        _ensure_column(conn, "sessions", "user_id")
+        _ensure_column(conn, "novelty", "user_id")
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str) -> None:
+    """Add `column TEXT` to `table` if it isn't there yet (simple, safe migration)."""
+    cols = [r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
 
 
 def _now() -> str:
@@ -68,25 +79,27 @@ def _now() -> str:
 
 
 # ---------------------------- Sessions ----------------------------
-def create_session(title: str = "New chat", source_mode: str = "corpus") -> str:
-    """Start a new conversation; returns its id."""
+def create_session(user_id: str, title: str = "New chat",
+                   source_mode: str = "corpus") -> str:
+    """Start a new conversation owned by `user_id`; returns its id."""
     sid = str(uuid.uuid4())
     now = _now()
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO sessions (id, title, source_mode, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (sid, title, source_mode, now, now),
+            "INSERT INTO sessions (id, user_id, title, source_mode, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (sid, user_id, title, source_mode, now, now),
         )
     return sid
 
 
-def list_sessions() -> list[dict]:
-    """All conversations, most recently used first (for the sidebar)."""
+def list_sessions(user_id: str) -> list[dict]:
+    """This user's conversations, most recently used first (for the sidebar)."""
     with _connect() as conn:
         rows = conn.execute(
             "SELECT id, title, source_mode, updated_at FROM sessions "
-            "ORDER BY updated_at DESC"
+            "WHERE user_id = ? ORDER BY updated_at DESC",
+            (user_id,),
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -139,24 +152,27 @@ def get_messages(session_id: str) -> list[dict]:
 
 
 # ---------------------------- Novelty analyses ----------------------------
-def save_novelty(idea: str, analysis: str, sources: list[dict] | None = None) -> str:
-    """Persist a Find-Novelty analysis so it can be reloaded later."""
+def save_novelty(user_id: str, idea: str, analysis: str,
+                 sources: list[dict] | None = None) -> str:
+    """Persist a Find-Novelty analysis (owned by `user_id`) so it can be reloaded later."""
     nid = str(uuid.uuid4())
     with _connect() as conn:
         conn.execute(
-            "INSERT INTO novelty (id, idea, analysis, sources, created_at) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (nid, idea, analysis,
+            "INSERT INTO novelty (id, user_id, idea, analysis, sources, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (nid, user_id, idea, analysis,
              json.dumps(sources) if sources is not None else None, _now()),
         )
     return nid
 
 
-def list_novelty() -> list[dict]:
-    """Saved analyses, newest first (for the dropdown)."""
+def list_novelty(user_id: str) -> list[dict]:
+    """This user's saved analyses, newest first (for the dropdown)."""
     with _connect() as conn:
         rows = conn.execute(
-            "SELECT id, idea, created_at FROM novelty ORDER BY created_at DESC"
+            "SELECT id, idea, created_at FROM novelty "
+            "WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,),
         ).fetchall()
     return [dict(r) for r in rows]
 

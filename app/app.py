@@ -22,6 +22,7 @@ from src.config import DATA_DIR
 from src.retrieval.search import Retriever
 from src.retrieval.uploaded_docs import UploadedIndex
 from src.chat import store
+from src.chat import auth
 from src.chat.conversation import answer_in_conversation
 from src.citations.validator import validate_citations
 from src.explore.diagram import generate_mermaid
@@ -39,40 +40,44 @@ _THEME_CSS = """
 
 /* gradient brand header */
 .ps-header {
-  background: linear-gradient(100deg, #a855f7 0%, #6366f1 48%, #22d3ee 100%);
+  background: linear-gradient(100deg, #10b981 0%, #14b8a6 50%, #2dd4bf 100%);
   padding: 20px 26px; border-radius: 16px; margin: 2px 0 16px 0;
-  box-shadow: 0 10px 30px rgba(124, 108, 255, 0.28);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.28);
 }
-.ps-title { font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
-.ps-tag   { font-size: 14px; color: rgba(255,255,255,0.92); margin-top: 3px; }
+.ps-title { font-size: 30px; font-weight: 800; color: #04201a; letter-spacing: -0.5px; }
+.ps-tag   { font-size: 14px; color: rgba(4,32,26,0.86); margin-top: 3px; }
 
 /* sidebar nav: turn the radio into pill buttons, gradient the active one */
 section[data-testid="stSidebar"] div[role="radiogroup"] label {
-  background: #16182e; border: 1px solid #2a2d4a; border-radius: 10px;
+  background: #102420; border: 1px solid #1d3a33; border-radius: 10px;
   padding: 9px 12px; margin-bottom: 7px; transition: all 0.15s ease; width: 100%;
 }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #a855f7; }
+section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #10b981; }
 section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-  background: linear-gradient(100deg, #a855f7, #6366f1);
-  border-color: transparent; box-shadow: 0 4px 14px rgba(124,108,255,0.35);
+  background: linear-gradient(100deg, #10b981, #14b8a6);
+  border-color: transparent; box-shadow: 0 4px 14px rgba(16,185,129,0.35);
 }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #fff; font-weight: 600; }
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #04201a; font-weight: 600; }
 section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }  /* hide the dot */
 
 /* primary buttons: gradient fill */
-.stButton > button[kind="primary"] {
-  background: linear-gradient(100deg, #a855f7, #6366f1);
-  border: none; font-weight: 600; transition: filter 0.15s ease;
+.stButton > button[kind="primary"], .stFormSubmitButton > button {
+  background: linear-gradient(100deg, #10b981, #14b8a6);
+  border: none; color: #04201a; font-weight: 700; transition: filter 0.15s ease;
 }
-.stButton > button[kind="primary"]:hover { filter: brightness(1.1); }
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { filter: brightness(1.08); }
 
 /* example-question chips */
-.stButton > button[kind="secondary"] { border-radius: 10px; border-color: #2a2d4a; }
+.stButton > button[kind="secondary"] { border-radius: 10px; border-color: #1d3a33; }
 
 /* chat bubbles + cards: softer, rounded */
 [data-testid="stChatMessage"] { border-radius: 14px; }
-[data-testid="stExpander"] { border-radius: 12px; border-color: #2a2d4a; }
+[data-testid="stExpander"] { border-radius: 12px; border-color: #1d3a33; }
 .stChatInput textarea { border-radius: 12px; }
+
+/* login/register card */
+.ps-authcard { text-align: center; margin: 8px 0 4px; }
+.ps-authcard h3 { margin-bottom: 2px; }
 </style>
 """
 
@@ -93,6 +98,51 @@ def render_header() -> None:
 
 
 inject_theme()
+
+
+def render_auth_page() -> None:
+    """The login / register screen shown before anyone is signed in."""
+    render_header()
+    _, mid, _ = st.columns([1, 1.4, 1])
+    with mid:
+        st.markdown('<div class="ps-authcard"><h3>Welcome 👋</h3>'
+                    '<p>Log in or create an account to start exploring ML papers.</p></div>',
+                    unsafe_allow_html=True)
+        tab_login, tab_register = st.tabs(["🔑  Log in", "✨  Create account"])
+
+        with tab_login:
+            with st.form("login_form"):
+                login = st.text_input("Username or email")
+                pwd = st.text_input("Password", type="password")
+                submitted = st.form_submit_button("Log in", type="primary",
+                                                  use_container_width=True)
+            if submitted:
+                user = auth.verify_user(login, pwd)
+                if user:
+                    st.session_state.user = user
+                    st.rerun()
+                else:
+                    st.error("Wrong username/email or password.")
+
+        with tab_register:
+            with st.form("register_form"):
+                u = st.text_input("Username", help="At least 3 characters")
+                e = st.text_input("Email")
+                p = st.text_input("Password", type="password", help="At least 6 characters")
+                p2 = st.text_input("Confirm password", type="password")
+                submitted = st.form_submit_button("Create account", type="primary",
+                                                  use_container_width=True)
+            if submitted:
+                if p != p2:
+                    st.error("Passwords don't match.")
+                else:
+                    ok, msg = auth.register_user(u, e, p)
+                    (st.success if ok else st.error)(msg)
+                    if ok:
+                        st.caption("👆 Now switch to the **Log in** tab.")
+
+        st.caption("🔒 Your password is salted + hashed (PBKDF2-SHA256) — it's never "
+                   "stored in plain text.")
 
 
 @st.cache_resource(show_spinner="Loading models + indexes (first time only)...")
@@ -191,17 +241,18 @@ def followup_chat(key: str, context: str, sources: list[dict]) -> None:
 
 # =================================================================== CHAT VIEW
 def render_chat_view() -> None:
+    uid = st.session_state.user["id"]
     if "session_id" not in st.session_state:
-        existing = store.list_sessions()
+        existing = store.list_sessions(uid)
         st.session_state.session_id = (existing[0]["id"] if existing
-                                       else store.create_session())
+                                       else store.create_session(uid))
 
     with st.sidebar:
         if st.button("➕  New chat", use_container_width=True):
-            st.session_state.session_id = store.create_session()
+            st.session_state.session_id = store.create_session(uid)
             st.rerun()
         st.caption("YOUR CHATS")
-        for s in store.list_sessions():
+        for s in store.list_sessions(uid):
             c1, c2 = st.columns([0.82, 0.18])
             is_active = s["id"] == st.session_state.session_id
             label = s["title"][:26] + ("…" if len(s["title"]) > 26 else "")
@@ -212,9 +263,9 @@ def render_chat_view() -> None:
             if c2.button("🗑", key=f"del_{s['id']}", help="Delete this chat"):
                 store.delete_session(s["id"])
                 if is_active:
-                    rest = store.list_sessions()
+                    rest = store.list_sessions(uid)
                     st.session_state.session_id = (rest[0]["id"] if rest
-                                                   else store.create_session())
+                                                   else store.create_session(uid))
                 st.rerun()
 
     sid = st.session_state.session_id
@@ -277,7 +328,7 @@ def render_chat_view() -> None:
     uidx = st.session_state.get("uploaded_index")
     use_up = bool(st.session_state.get("use_uploads") and uidx and uidx.chunks)
     store.add_message(sid, "user", prompt)
-    current = next((x for x in store.list_sessions() if x["id"] == sid), None)
+    current = next((x for x in store.list_sessions(uid) if x["id"] == sid), None)
     if current and current["title"] == "New chat":
         store.rename_session(sid, prompt[:40])
 
@@ -497,7 +548,8 @@ def render_novelty_view() -> None:
 
     # Dropdown of saved analyses; the active one is tracked in session state so that
     # creating, reloading, and chatting all stay in sync.
-    saved = store.list_novelty()
+    uid = st.session_state.user["id"]
+    saved = store.list_novelty(uid)
     options = {"➕ New analysis": None}
     for s in saved:
         options[f"{s['idea'][:55]}  ·  {s['created_at'][:10]}"] = s["id"]
@@ -521,7 +573,7 @@ def render_novelty_view() -> None:
                 passages = retriever.search(idea, top_k=10)
                 from src.explore.novelty import find_novelty
                 res = find_novelty(idea, passages)
-            new_nid = store.save_novelty(idea, res["analysis"], res["sources"])
+            new_nid = store.save_novelty(uid, idea, res["analysis"], res["sources"])
             st.session_state.active_novelty = new_nid          # jump to it (with chat)
             st.rerun()
         return
@@ -561,11 +613,20 @@ def render_novelty_view() -> None:
 
 
 # ===================================================================== DISPATCH
+# ---- Auth gate: the app is locked until someone signs in ----
+if "user" not in st.session_state:
+    render_auth_page()
+    st.stop()
+
 with st.sidebar:
     st.title("📚 PaperSage")
-    st.caption("Agentic RAG over ML papers")
+    st.caption(f"👤 Signed in as **{st.session_state.user['username']}**")
     VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"],
                     label_visibility="collapsed")
+    if st.button("🚪  Log out", use_container_width=True):
+        for k in ("user", "session_id", "active_novelty", "compare_result", "quiz_result"):
+            st.session_state.pop(k, None)
+        st.rerun()
     st.divider()
 
 render_header()

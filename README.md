@@ -45,7 +45,8 @@ facts).
 - **Auto-diagrams** — turn any answer into a Mermaid concept flowchart on demand (one click, rendered inline)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag
 - **100% open-source & free** — open models for embeddings/reranking, free Groq tier for generation
-- **Polished Streamlit UI** — custom "vibrant" dark theme (gradient header, pill navigation, gradient buttons), example-question chips, a 📎 attach button, and expandable source cards
+- **User accounts** — register / log in / log out with securely hashed passwords (PBKDF2-SHA256 + per-user salt, constant-time check); each user's chats and saved analyses are private to them
+- **Polished Streamlit UI** — custom "emerald" dark theme (gradient header, pill navigation, gradient buttons), example-question chips, a 📎 attach button, and expandable source cards
 
 ---
 
