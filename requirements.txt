@@ -16,11 +16,10 @@ python-dotenv==1.0.1         # loads secret API keys from a .env file (kept out 
 # --- Web search fallback (when the papers don't cover a question) ---
 ddgs                         # free DuckDuckGo search, no API key needed
 
-# --- API + UI ---
-fastapi==0.115.2             # backend web server
-uvicorn==0.32.0              # runs the FastAPI server
+# --- UI ---
 streamlit==1.58.0            # the clickable UI (>=1.43 needed for chat-box file upload)
-pydantic==2.9.2              # typed request/response shapes + validation
+# (fastapi/uvicorn removed: not used by the app, and their old starlette pin
+#  conflicted with Streamlit 1.58's starlette requirement.)
 
 # --- Research Map (2D paper visualization) ---
 scikit-learn                 # t-SNE projection + KMeans clustering
