@@ -76,6 +76,46 @@ section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }
 /* login/register card */
 .ps-authcard { text-align: center; margin: 8px 0 4px; }
 .ps-authcard h3 { margin-bottom: 2px; }
+
+/* sidebar profile card */
+.ps-profile { display: flex; align-items: center; gap: 11px; background: #181b26;
+  border: 1px solid #262a3b; border-radius: 12px; padding: 10px 12px; margin: 4px 0 6px; }
+.ps-avatar { width: 38px; height: 38px; border-radius: 50%; background: #4a4f86;
+  color: #eceef6; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; flex: 0 0 auto; }
+.ps-pname { font-weight: 700; color: #e7e8f2; font-size: 14px; line-height: 1.15; }
+.ps-prole { color: #9aa0b5; font-size: 12px; }
+.ps-badge { display: inline-block; background: #2a2f52; color: #b9bdf0; font-size: 11px;
+  font-weight: 600; padding: 2px 11px; border-radius: 20px; margin: 0 0 6px; }
+
+/* section hero (per view) */
+.ps-hero { background: linear-gradient(100deg, #1c2036, #24294b); border: 1px solid #2e3357;
+  border-radius: 14px; padding: 18px 22px; margin-bottom: 14px; }
+.ps-hero-title { font-size: 23px; font-weight: 800; color: #e7e8f2; letter-spacing: -0.3px; }
+.ps-hero-sub { font-size: 13px; color: rgba(231,232,242,0.6); margin-top: 3px; }
+
+/* numbered stepper */
+.ps-stepper { display: flex; align-items: center; gap: 10px; margin: 2px 0 16px; }
+.ps-step { display: flex; align-items: center; gap: 10px; }
+.ps-stepnum { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+  background: #20243a; color: #8b90ab; border: 1px solid #2e3357; }
+.ps-step.on .ps-stepnum { background: #4a4f86; color: #eceef6; border-color: #5a5fa0; }
+.ps-steptitle { font-weight: 600; color: #d6d8e2; font-size: 13px; line-height: 1.1; }
+.ps-stepsub { color: #8b90ab; font-size: 11px; }
+.ps-stepline { flex: 1 1 auto; height: 1px; background: #2e3357; }
+
+/* prettier markdown tables (used by Compare) — colour-code paper columns */
+[data-testid="stMarkdownContainer"] table { border-collapse: separate; border-spacing: 0;
+  width: 100%; border: 1px solid #262a3b; border-radius: 12px; overflow: hidden; }
+[data-testid="stMarkdownContainer"] th { background: #181b26; color: #cfd3e6;
+  text-align: left; padding: 10px 13px; font-weight: 600; }
+[data-testid="stMarkdownContainer"] td { padding: 10px 13px; border-top: 1px solid #23273a; }
+[data-testid="stMarkdownContainer"] td:first-child { color: #9aa0b5; font-weight: 600; }
+[data-testid="stMarkdownContainer"] td:nth-child(2) { color: #a9a4e8; }   /* paper 1 */
+[data-testid="stMarkdownContainer"] td:nth-child(3) { color: #79c6b5; }   /* paper 2 */
+[data-testid="stMarkdownContainer"] td:nth-child(4) { color: #e0a98f; }   /* paper 3 */
+[data-testid="stMarkdownContainer"] td:nth-child(5) { color: #9ec1e8; }   /* paper 4 */
 </style>
 """
 
@@ -93,6 +133,44 @@ def render_header() -> None:
         '</div>',
         unsafe_allow_html=True,
     )
+
+
+def sidebar_profile() -> None:
+    """A profile card (avatar + name + role + plan badge) at the top of the sidebar."""
+    u = st.session_state.user
+    initial = (u["username"][:1] or "?").upper()
+    st.markdown(
+        f'<div class="ps-profile"><div class="ps-avatar">{initial}</div>'
+        f'<div><div class="ps-pname">{u["username"]}</div>'
+        f'<div class="ps-prole">Researcher</div></div></div>'
+        f'<span class="ps-badge">✦ Free Plan</span>',
+        unsafe_allow_html=True,
+    )
+
+
+def section_hero(icon: str, title: str, subtitle: str) -> None:
+    """A gradient hero banner at the top of each view (icon + title + subtitle)."""
+    st.markdown(
+        f'<div class="ps-hero"><div class="ps-hero-title">{icon} {title}</div>'
+        f'<div class="ps-hero-sub">{subtitle}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def stepper(steps: list[tuple[str, str]], active: int = 0) -> None:
+    """A numbered stepper: steps = [(title, subtitle), ...]; everything up to `active` is lit."""
+    parts = []
+    for i, (title, sub) in enumerate(steps):
+        on = "on" if i <= active else ""
+        parts.append(
+            f'<div class="ps-step {on}"><div class="ps-stepnum">{i+1}</div>'
+            f'<div><div class="ps-steptitle">{title}</div>'
+            f'<div class="ps-stepsub">{sub}</div></div></div>'
+        )
+        if i < len(steps) - 1:
+            parts.append('<div class="ps-stepline"></div>')
+    st.markdown('<div class="ps-stepper">' + "".join(parts) + "</div>",
+                unsafe_allow_html=True)
 
 
 inject_theme()
@@ -267,8 +345,8 @@ def render_chat_view() -> None:
                 st.rerun()
 
     sid = st.session_state.session_id
-    st.caption("Agentic RAG over 200 ML papers — hybrid retrieval + reranking + "
-               "grounded, cited answers. Fully open-source (Llama via Groq).")
+    section_hero("💬", "Chat",
+                 "Ask anything about the ML papers — grounded, cited answers.")
 
     _uidx = st.session_state.get("uploaded_index")
     if _uidx is not None and _uidx.chunks:
@@ -352,7 +430,8 @@ def render_chat_view() -> None:
 
 # =================================================================== MAP VIEW
 def render_map_view() -> None:
-    st.subheader("📍 Research Map")
+    section_hero("📍", "Research Map",
+                 "A 2D map of every paper, clustered by topic. Click a dot to open it.")
     if not MAP_PATH.exists():
         st.warning("The research map hasn't been built yet. Run:\n\n"
                    "```\npython -m src.explore.build_map\n```")
@@ -414,10 +493,12 @@ def render_map_view() -> None:
 
 # ================================================================== COMPARE VIEW
 def render_compare_view() -> None:
-    st.subheader("⚖️ Compare Papers")
-    st.caption("Pick papers from the corpus **and/or upload your own PDFs**, then compare. "
-               "PaperSage reads each one and synthesizes a detailed side-by-side table "
-               "(problem, method, novelty, dataset, results, strengths, limitations).")
+    section_hero("⚖️", "Compare Papers", "Side-by-side insights. Smarter decisions.")
+    has_result = bool(st.session_state.get("compare_result"))
+    stepper([("Add Papers", "Upload or select"),
+             ("Compare", "AI analyzes & aligns"),
+             ("Insights", "Explore differences")],
+            active=2 if has_result else 0)
 
     meta = load_meta()                              # {arxiv_id: paper}
     title_to_id = {p["title"]: aid for aid, p in meta.items()}
@@ -489,9 +570,8 @@ def _render_quiz_items(qtype: str, items: list[dict]) -> None:
 
 
 def render_quiz_view() -> None:
-    st.subheader("🎓 Quiz & Study")
-    st.caption("Turn any paper into study material. Pick a corpus paper or upload your own, "
-               "choose a format, and generate.")
+    section_hero("🎓", "Quiz & Study",
+                 "Turn any paper into MCQs, flashcards, coding or interview questions.")
 
     meta = load_meta()
     title_to_id = {p["title"]: aid for aid, p in meta.items()}
@@ -540,9 +620,8 @@ def render_quiz_view() -> None:
 
 # ================================================================== NOVELTY VIEW
 def render_novelty_view() -> None:
-    st.subheader("💡 Find Novelty")
-    st.caption("Describe a research idea — PaperSage finds related work, gaps, and novel directions, "
-               "then lets you **discuss it** in a chat. Analyses and their chats are saved.")
+    section_hero("💡", "Find Novelty",
+                 "Position your idea against the literature — related work, gaps, novel directions.")
 
     # Dropdown of saved analyses; the active one is tracked in session state so that
     # creating, reloading, and chatting all stay in sync.
@@ -616,13 +695,11 @@ if "user" not in st.session_state:
     render_auth_page()
     st.stop()
 
-# Left panel: just the brand + user (Chat view adds New chat + history below;
+# Left panel: brand + profile card (Chat view adds New chat + history below;
 # Log out is pinned at the very bottom further down).
 with st.sidebar:
     st.title("📚 PaperSage")
-    st.caption(f"👤 Signed in as **{st.session_state.user['username']}**")
-
-render_header()
+    sidebar_profile()
 
 # ---- Top navigation: section tabs across the top ----
 NAV = ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"]
