@@ -38,13 +38,13 @@ _THEME_CSS = """
 #MainMenu, footer {visibility: hidden;}
 [data-testid="stHeader"] {background: transparent;}
 
-/* brand header — flat solid, matte (no gradient, no glow) */
-.ps-header {
-  background: #232744; border: 1px solid #2e3357;
-  padding: 20px 26px; border-radius: 14px; margin: 2px 0 16px 0;
-}
+/* pull the whole page up (Streamlit leaves a big top gap by default) */
+.block-container, [data-testid="stMainBlockContainer"] { padding-top: 1.8rem; }
+
+/* brand header — no box, sits flush on the canvas */
+.ps-header { padding: 0; margin: 0 0 10px 0; }
 .ps-title { font-size: 30px; font-weight: 800; color: #e7e8f2; letter-spacing: -0.5px; }
-.ps-tag   { font-size: 14px; color: rgba(231,232,242,0.72); margin-top: 3px; }
+.ps-tag   { font-size: 14px; color: rgba(231,232,242,0.62); margin-top: 2px; }
 
 /* sidebar nav: pill buttons; active one is a flat solid tint */
 section[data-testid="stSidebar"] div[role="radiogroup"] label {
