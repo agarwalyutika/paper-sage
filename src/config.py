@@ -54,10 +54,15 @@ class Settings:
     CHUNK_OVERLAP = 200      # overlap so a sentence isn't cut awkwardly between chunks
 
     # --- Models (small on purpose, so CPU query-time stays fast) ---
-    EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"      # text -> vector
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")   # text -> vector
     RERANKER_MODEL = "BAAI/bge-reranker-base"       # re-scores candidates for precision
-    # Automatically use the fine-tuned reranker if it has been trained + placed here.
-    if (PROJECT_ROOT / "models" / "bge-reranker-base-ft").exists():
+    # Reranker priority:
+    #   1) RERANKER_MODEL env var  -> e.g. a HuggingFace Hub repo id on the deployed demo
+    #   2) a locally fine-tuned model folder (your laptop, after training on Colab)
+    #   3) the base model
+    if os.getenv("RERANKER_MODEL"):
+        RERANKER_MODEL = os.getenv("RERANKER_MODEL")
+    elif (PROJECT_ROOT / "models" / "bge-reranker-base-ft").exists():
         RERANKER_MODEL = str(PROJECT_ROOT / "models" / "bge-reranker-base-ft")
 
     # --- Vector DB ---
