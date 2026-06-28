@@ -300,7 +300,10 @@ def render_sources(answer_text: str, sources: list[dict]) -> None:
             else:
                 st.markdown(f"{head} · {s['arxiv_id']}")
             if s.get("text"):
-                st.caption(s["text"][:320].strip() + "…")
+                # Collapse newlines and strip leading markdown markers (e.g. a leading
+                # "#" from a web snippet would otherwise render as a giant heading).
+                snippet = " ".join(s["text"].split()).lstrip("#*->=|`~ ").strip()
+                st.caption(snippet[:320] + "…")
 
 
 def followup_chat(key: str, context: str, sources: list[dict]) -> None:
