@@ -8,7 +8,7 @@ sentence-transformers==3.2.1 # turns text into vectors (embeddings) + reranker m
 rank-bm25==0.2.2             # classic keyword search (the BM25 half of "hybrid")
 
 # --- Generation (writing the answer) ---
-groq>=1.5.0                  # free hosted Llama API client (a default LLM backend)
+groq==1.5.0                  # free hosted Llama API client (a default LLM backend)
 google-genai                 # Google Gemini client (free tier, strong; LLM_BACKEND=gemini)
 anthropic==0.39.0            # Claude API client (optional backend)
 python-dotenv==1.0.1         # loads secret API keys from a .env file (kept out of git)
@@ -19,7 +19,7 @@ ddgs                         # free DuckDuckGo search, no API key needed
 # --- API + UI ---
 fastapi==0.115.2             # backend web server
 uvicorn==0.32.0              # runs the FastAPI server
-streamlit==1.39.0            # the clickable UI you will demo
+streamlit==1.58.0            # the clickable UI (>=1.43 needed for chat-box file upload)
 pydantic==2.9.2              # typed request/response shapes + validation
 
 # --- Research Map (2D paper visualization) ---
