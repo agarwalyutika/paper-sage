@@ -31,125 +31,100 @@ st.set_page_config(page_title="PaperSage", page_icon="📚", layout="wide")
 
 MAP_PATH = DATA_DIR / "research_map.json"
 
-# ----------------------------------------------------------------- VIBRANT THEME
+# --------------------------------------------------------------- EDITORIAL THEME
 _THEME_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 
-/* hide default Streamlit chrome for a cleaner, app-like feel */
+/* hide default Streamlit chrome */
 #MainMenu, footer {visibility: hidden;}
 [data-testid="stHeader"] {background: transparent;}
 
-/* modern typography */
+/* EDITORIAL typography — Inter for body, Syne for big display headlines */
 html, body, [class*="css"], .stMarkdown, p, span, div, button, input, textarea, label {
   font-family: 'Inter', -apple-system, sans-serif;
 }
-.ps-title, .ps-hero-title, h1, h2, h3 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+.ps-title, .ed-title, h1, h2, h3 { font-family: 'Syne', 'Inter', sans-serif; }
+a, a:visited { color: #ff5436; }
 
-/* atmospheric depth — soft colour glows in the corners, not per-element shine */
-.stApp {
-  background:
-    radial-gradient(1000px 680px at 8% -5%,  rgba(99,102,180,0.18), transparent 60%),
-    radial-gradient(900px 600px  at 96% 6%,  rgba(60,140,150,0.13), transparent 55%),
-    radial-gradient(800px 560px  at 50% 108%, rgba(126,92,176,0.14), transparent 60%),
-    #0b0d15;
-  background-attachment: fixed;
-}
-
-/* translucent sidebar so the atmospheric background shows through */
+/* flat near-black 'gallery' canvas — editorial is flat and type-led, not glassy */
+.stApp { background: #0c0c0d; }
 section[data-testid="stSidebar"] > div {
-  background: rgba(13,15,24,0.55); backdrop-filter: blur(12px);
-  border-right: 1px solid rgba(255,255,255,0.06);
+  background: #0e0e0f; border-right: 1px solid rgba(242,239,233,0.10);
 }
 
-/* pull the whole page up (Streamlit leaves a big top gap by default) */
-.block-container, [data-testid="stMainBlockContainer"] { padding-top: 1.8rem; }
+/* lift + cap the page width like a magazine column */
+.block-container, [data-testid="stMainBlockContainer"] { padding-top: 1.6rem; max-width: 1180px; }
 
-/* micro-interaction: buttons lift on hover */
-.stButton > button { transition: transform .12s ease, filter .12s ease, border-color .12s ease; }
+/* ---------- magazine masthead (the per-view section hero) ---------- */
+.ed-masthead { margin: 2px 0 24px; padding-bottom: 16px; border-bottom: 2px solid #ff5436; }
+.ed-kicker { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: #ff5436; margin-bottom: 10px; }
+.ed-title { font-size: 54px; font-weight: 800; line-height: 0.96; letter-spacing: -1.6px; color: #f2efe9; }
+.ed-sub { font-size: 15px; color: #908d85; margin-top: 12px; max-width: 620px; line-height: 1.5; }
+
+/* buttons — sharp, flat, editorial */
+.stButton > button { border-radius: 4px; font-weight: 600;
+  transition: transform .1s ease, background .12s ease, color .12s ease, border-color .12s ease; }
 .stButton > button:hover { transform: translateY(-1px); }
-
-/* brand header — no box, sits flush on the canvas */
-.ps-header { padding: 0; margin: 0 0 10px 0; }
-.ps-title { font-size: 30px; font-weight: 800; color: #e7e8f2; letter-spacing: -0.5px; }
-.ps-tag   { font-size: 14px; color: rgba(231,232,242,0.62); margin-top: 2px; }
-
-/* sidebar nav: pill buttons; active one is a flat solid tint */
-section[data-testid="stSidebar"] div[role="radiogroup"] label {
-  background: #181b26; border: 1px solid #262a3b; border-radius: 10px;
-  padding: 9px 12px; margin-bottom: 7px; transition: all 0.15s ease; width: 100%;
-}
-section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { border-color: #6b6fa3; }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-  background: #3a3f6b; border-color: #4a4f86;
-}
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: #eceef6; font-weight: 600; }
-section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }  /* hide the dot */
-
-/* primary buttons: flat solid fill */
 .stButton > button[kind="primary"], .stFormSubmitButton > button {
-  background: #4a4f86; border: none; color: #eceef6; font-weight: 600;
-  transition: filter 0.15s ease;
+  background: #ff5436; border: none; color: #0c0c0d; font-weight: 700; letter-spacing: 0.2px;
 }
-.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { filter: brightness(1.12); }
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { background: #ff6a50; }
+.stButton > button[kind="secondary"] {
+  background: transparent; border: 1px solid rgba(242,239,233,0.18); color: #cfccc4; }
+.stButton > button[kind="secondary"]:hover { border-color: #ff5436; color: #f2efe9; }
 
-/* example-question chips */
-.stButton > button[kind="secondary"] { border-radius: 10px; border-color: #262a3b; }
+/* brand (sidebar) */
+.ps-header { padding: 0; margin: 0 0 8px 0; }
+.ps-title { font-size: 26px; font-weight: 800; color: #f2efe9; letter-spacing: -0.8px; }
+.ps-tag   { font-size: 13px; color: #908d85; margin-top: 2px; }
 
-/* chat bubbles + cards: glassy, rounded */
-[data-testid="stChatMessage"] { border-radius: 16px;
-  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.06); }
-[data-testid="stExpander"] { border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); }
-.stChatInput textarea { border-radius: 12px; }
+/* inputs + cards — sharp corners, flat surfaces */
+.stChatInput textarea, input, textarea { border-radius: 4px !important; }
+[data-baseweb="select"] > div { border-radius: 4px !important; }
+[data-testid="stChatMessage"] { border-radius: 6px;
+  background: #131312; border: 1px solid rgba(242,239,233,0.07); }
+[data-testid="stExpander"] { border-radius: 6px;
+  border: 1px solid rgba(242,239,233,0.12); background: #111110; }
 
 /* login/register card */
 .ps-authcard { text-align: center; margin: 8px 0 4px; }
 .ps-authcard h3 { margin-bottom: 2px; }
 
-/* sidebar profile card — frosted glass */
-.ps-profile { display: flex; align-items: center; gap: 11px;
-  background: rgba(34,38,58,0.55); backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.09); border-radius: 14px;
-  padding: 11px 13px; margin: 4px 0 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
-.ps-avatar { width: 38px; height: 38px; border-radius: 50%; background: #4a4f86;
-  color: #eceef6; display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 16px; flex: 0 0 auto; }
-.ps-pname { font-weight: 700; color: #e7e8f2; font-size: 14px; line-height: 1.15; }
-.ps-prole { color: #9aa0b5; font-size: 12px; }
-.ps-badge { display: inline-block; background: #2a2f52; color: #b9bdf0; font-size: 11px;
-  font-weight: 600; padding: 2px 11px; border-radius: 20px; margin: 0 0 6px; }
+/* sidebar profile card — flat, editorial (square accent avatar, outline badge) */
+.ps-profile { display: flex; align-items: center; gap: 11px; background: #141413;
+  border: 1px solid rgba(242,239,233,0.12); border-radius: 6px; padding: 11px 12px; margin: 4px 0 6px; }
+.ps-avatar { width: 38px; height: 38px; border-radius: 4px; background: #ff5436;
+  color: #0c0c0d; display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; flex: 0 0 auto; }
+.ps-pname { font-weight: 700; color: #f2efe9; font-size: 14px; line-height: 1.15; }
+.ps-prole { color: #908d85; font-size: 12px; }
+.ps-badge { display: inline-block; background: transparent; color: #ff5436; border: 1px solid #ff5436;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 2px 9px; border-radius: 3px; margin: 0 0 6px; }
 
-/* section hero (per view) — frosted glass with a soft gradient sheen */
-.ps-hero { background: linear-gradient(120deg, rgba(46,50,88,0.55), rgba(26,30,54,0.42));
-  backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 18px; padding: 22px 26px; margin-bottom: 16px;
-  box-shadow: 0 12px 36px rgba(0,0,0,0.32); }
-.ps-hero-title { font-size: 26px; font-weight: 700; color: #f1f2fa; letter-spacing: -0.4px; }
-.ps-hero-sub { font-size: 13.5px; color: rgba(241,242,250,0.64); margin-top: 4px; }
-
-/* numbered stepper */
-.ps-stepper { display: flex; align-items: center; gap: 10px; margin: 2px 0 16px; }
+/* stepper — editorial: square tiles, accent fill when lit */
+.ps-stepper { display: flex; align-items: center; gap: 12px; margin: 2px 0 20px; }
 .ps-step { display: flex; align-items: center; gap: 10px; }
-.ps-stepnum { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center; font-weight: 700;
-  background: #20243a; color: #8b90ab; border: 1px solid #2e3357; }
-.ps-step.on .ps-stepnum { background: #4a4f86; color: #eceef6; border-color: #5a5fa0; }
-.ps-steptitle { font-weight: 600; color: #d6d8e2; font-size: 13px; line-height: 1.1; }
-.ps-stepsub { color: #8b90ab; font-size: 11px; }
-.ps-stepline { flex: 1 1 auto; height: 1px; background: #2e3357; }
+.ps-stepnum { width: 30px; height: 30px; border-radius: 4px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  background: transparent; color: #6f6c65; border: 1px solid rgba(242,239,233,0.18); }
+.ps-step.on .ps-stepnum { background: #ff5436; color: #0c0c0d; border-color: #ff5436; }
+.ps-steptitle { font-weight: 700; color: #f2efe9; font-size: 13px; line-height: 1.1; }
+.ps-stepsub { color: #908d85; font-size: 11px; }
+.ps-stepline { flex: 1 1 auto; height: 1px; background: rgba(242,239,233,0.14); }
 
-/* prettier markdown tables (used by Compare) — colour-code paper columns */
-[data-testid="stMarkdownContainer"] table { border-collapse: separate; border-spacing: 0;
-  width: 100%; border: 1px solid #262a3b; border-radius: 12px; overflow: hidden; }
-[data-testid="stMarkdownContainer"] th { background: #181b26; color: #cfd3e6;
-  text-align: left; padding: 10px 13px; font-weight: 600; }
-[data-testid="stMarkdownContainer"] td { padding: 10px 13px; border-top: 1px solid #23273a; }
-[data-testid="stMarkdownContainer"] td:first-child { color: #9aa0b5; font-weight: 600; }
-[data-testid="stMarkdownContainer"] td:nth-child(2) { color: #a9a4e8; }   /* paper 1 */
-[data-testid="stMarkdownContainer"] td:nth-child(3) { color: #79c6b5; }   /* paper 2 */
-[data-testid="stMarkdownContainer"] td:nth-child(4) { color: #e0a98f; }   /* paper 3 */
-[data-testid="stMarkdownContainer"] td:nth-child(5) { color: #9ec1e8; }   /* paper 4 */
+/* tables (Compare) — editorial: accent top rule, clean hairlines, single ink */
+[data-testid="stMarkdownContainer"] table { border-collapse: collapse; width: 100%;
+  border-top: 2px solid #ff5436; }
+[data-testid="stMarkdownContainer"] th { color: #f2efe9; text-align: left; padding: 11px 12px;
+  font-family: 'Syne', sans-serif; font-weight: 700; border-bottom: 1px solid rgba(242,239,233,0.20); }
+[data-testid="stMarkdownContainer"] td { padding: 11px 12px; border-bottom: 1px solid rgba(242,239,233,0.08); }
+[data-testid="stMarkdownContainer"] td:first-child { color: #908d85; font-weight: 600;
+  text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+[data-testid="stMarkdownContainer"] td:nth-child(n+2) { color: #ddd9d0; }
 </style>
 """
 
@@ -182,11 +157,12 @@ def sidebar_profile() -> None:
     )
 
 
-def section_hero(icon: str, title: str, subtitle: str) -> None:
-    """A gradient hero banner at the top of each view (icon + title + subtitle)."""
+def section_hero(kicker: str, title: str, subtitle: str) -> None:
+    """A magazine masthead at the top of each view: eyebrow kicker + huge title + subtitle."""
     st.markdown(
-        f'<div class="ps-hero"><div class="ps-hero-title">{icon} {title}</div>'
-        f'<div class="ps-hero-sub">{subtitle}</div></div>',
+        f'<div class="ed-masthead"><div class="ed-kicker">{kicker}</div>'
+        f'<div class="ed-title">{title}</div>'
+        f'<div class="ed-sub">{subtitle}</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -379,8 +355,8 @@ def render_chat_view() -> None:
                 st.rerun()
 
     sid = st.session_state.session_id
-    section_hero("💬", "Chat",
-                 "Ask anything about the ML papers — grounded, cited answers.")
+    section_hero("01 — Workspace", "Ask the corpus.",
+                 "Grounded, cited answers drawn only from real ML research papers.")
 
     _uidx = st.session_state.get("uploaded_index")
     if _uidx is not None and _uidx.chunks:
@@ -464,8 +440,8 @@ def render_chat_view() -> None:
 
 # =================================================================== MAP VIEW
 def render_map_view() -> None:
-    section_hero("📍", "Research Map",
-                 "A 2D map of every paper, clustered by topic. Click a dot to open it.")
+    section_hero("02 — Atlas", "Research Map.",
+                 "Every paper, placed by topic similarity. Click any node to open it.")
     if not MAP_PATH.exists():
         st.warning("The research map hasn't been built yet. Run:\n\n"
                    "```\npython -m src.explore.build_map\n```")
@@ -527,7 +503,7 @@ def render_map_view() -> None:
 
 # ================================================================== COMPARE VIEW
 def render_compare_view() -> None:
-    section_hero("⚖️", "Compare Papers", "Side-by-side insights. Smarter decisions.")
+    section_hero("03 — Analysis", "Compare Papers.", "Side-by-side insights. Smarter decisions.")
     has_result = bool(st.session_state.get("compare_result"))
     stepper([("Add Papers", "Upload or select"),
              ("Compare", "AI analyzes & aligns"),
@@ -604,7 +580,7 @@ def _render_quiz_items(qtype: str, items: list[dict]) -> None:
 
 
 def render_quiz_view() -> None:
-    section_hero("🎓", "Quiz & Study",
+    section_hero("04 — Study", "Quiz & Study.",
                  "Turn any paper into MCQs, flashcards, coding or interview questions.")
 
     meta = load_meta()
@@ -654,8 +630,8 @@ def render_quiz_view() -> None:
 
 # ================================================================== NOVELTY VIEW
 def render_novelty_view() -> None:
-    section_hero("💡", "Find Novelty",
-                 "Position your idea against the literature — related work, gaps, novel directions.")
+    section_hero("05 — Frontier", "Find Novelty.",
+                 "Position your idea against the literature — gaps and novel directions.")
 
     # Dropdown of saved analyses; the active one is tracked in session state so that
     # creating, reloading, and chatting all stay in sync.
