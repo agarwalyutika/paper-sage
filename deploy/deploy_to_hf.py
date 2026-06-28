@@ -53,8 +53,8 @@ def main() -> None:
     else:
         print("WARNING: models/bge-reranker-base-ft not found — demo will use the base reranker.")
 
-    # 2) The Space
-    create_repo(SPACE_REPO, repo_type="space", space_sdk="streamlit", exist_ok=True)
+    # 2) The Space (Docker SDK — runs the Streamlit app via the Dockerfile)
+    create_repo(SPACE_REPO, repo_type="space", space_sdk="docker", exist_ok=True)
 
     # 3a) Space README (frontmatter) first…
     api.upload_file(path_or_fileobj=str(ROOT / "deploy" / "space_readme.md"),

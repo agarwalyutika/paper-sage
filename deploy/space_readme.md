@@ -3,9 +3,8 @@ title: PaperSage
 emoji: 📚
 colorFrom: gray
 colorTo: red
-sdk: streamlit
-sdk_version: 1.39.0
-app_file: app/app.py
+sdk: docker
+app_port: 7860
 pinned: false
 short_description: Agentic RAG over ML research papers — grounded, cited answers
 ---
