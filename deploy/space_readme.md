@@ -6,7 +6,7 @@ colorTo: red
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: Agentic RAG over ML research papers — grounded, cited answers
+short_description: Agentic RAG over ML papers — grounded, cited answers
 ---
 
 # 📚 PaperSage
