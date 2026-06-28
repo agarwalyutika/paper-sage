@@ -105,7 +105,9 @@ class Settings:
     LLM_FREQUENCY_PENALTY = 0.3
 
     # --- Web search fallback (used when the papers don't cover the question) ---
-    WEB_SEARCH_ENABLED = True
+    # On the hosted demo this is turned OFF (free DuckDuckGo returns junk from datacenter
+    # IPs); out-of-corpus questions then answer from the model's general knowledge instead.
+    WEB_SEARCH_ENABLED = os.getenv("WEB_SEARCH_ENABLED", "true").lower() in ("1", "true", "yes")
     # "duckduckgo" = free, no key (default). "tavily" = free key, more reliable content.
     WEB_SEARCH_BACKEND = os.getenv("WEB_SEARCH_BACKEND", "duckduckgo")
     WEB_SEARCH_K = 5

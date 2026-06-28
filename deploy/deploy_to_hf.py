@@ -68,6 +68,9 @@ def main() -> None:
     try:
         if ft.exists():
             api.add_space_variable(SPACE_REPO, "RERANKER_MODEL", MODEL_REPO)
+        # Free DuckDuckGo returns junk from datacenter IPs -> turn web search off on the
+        # demo so out-of-corpus questions answer from the model's general knowledge.
+        api.add_space_variable(SPACE_REPO, "WEB_SEARCH_ENABLED", "false")
         groq = os.getenv("GROQ_API_KEY", "")
         if groq:
             api.add_space_secret(SPACE_REPO, "GROQ_API_KEY", groq)
