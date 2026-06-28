@@ -41,6 +41,7 @@ facts).
 - **Implementation-code generation** — ask *"implement this loss/algorithm in PyTorch"* and it generates runnable code grounded in the paper's equations, with source-citing comments
 - **Quiz & study generator** — turn any paper (corpus or uploaded) into MCQs, flashcards, coding exercises, or interview questions (structured JSON → interactive cards with hidden answers)
 - **Find Novelty** — describe a research idea; it retrieves related work and analyzes *similar work · what's already done · research gaps · novel contribution ideas* (RAG applied to literature gap-analysis), then lets you **chat about it** with follow-up questions. Analyses + their chats are saved.
+- **Idea Lab (Research Idea Generator)** — give a topic; it retrieves related papers and generates several concrete graduate-project ideas, each with a **novelty score, difficulty, suggested datasets, expected contribution, and a step-by-step implementation roadmap** (structured JSON → interactive cards), with a follow-up chat
 - **Research Map** — an interactive 2D map of all 200 papers (t-SNE over the embeddings + KMeans topics); click a dot to open the paper. Zero extra LLM calls
 - **Auto-diagrams** — turn any answer into a Mermaid concept flowchart on demand (one click, rendered inline)
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag

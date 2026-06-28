@@ -700,6 +700,63 @@ def render_novelty_view() -> None:
 
 
 # ===================================================================== DISPATCH
+# ===================================================================== IDEAS VIEW
+def _render_ideas(ideas: list[dict]) -> None:
+    for i, idea in enumerate(ideas, 1):
+        nov = max(0, min(5, int(idea.get("novelty", 0) or 0)))
+        stars = "★" * nov + "☆" * (5 - nov)
+        diff = idea.get("difficulty", "—")
+        st.markdown(f"### {i}. {idea.get('title', '(untitled)')}")
+        st.markdown(f"**Novelty** {stars} ({nov}/5)  ·  **Difficulty:** {diff}")
+        if idea.get("summary"):
+            st.markdown(idea["summary"])
+        if idea.get("datasets"):
+            st.markdown("**Datasets:** " + ", ".join(str(d) for d in idea["datasets"]))
+        if idea.get("contributions"):
+            st.markdown(f"**Expected contribution:** {idea['contributions']}")
+        if idea.get("roadmap"):
+            with st.expander("🗺️ Implementation roadmap"):
+                for j, step in enumerate(idea["roadmap"], 1):
+                    st.markdown(f"{j}. {step}")
+        st.markdown("---")
+
+
+def render_ideas_view() -> None:
+    section_hero("06 — Ideation", "Idea Lab.",
+                 "Generate graduate-project ideas grounded in recent papers — each scored "
+                 "for novelty and difficulty, with datasets and an implementation roadmap.")
+
+    topic = st.text_input("Topic / area:",
+                          placeholder="e.g. retrieval-augmented generation (RAG)")
+    n = st.slider("How many ideas:", 3, 10, 6)
+
+    if topic and st.button("🧪  Generate ideas", type="primary"):
+        retriever = load_retriever()
+        with st.spinner("Reading related papers and inventing project ideas…"):
+            passages = retriever.search(topic, top_k=12)
+            from src.explore.ideas import generate_ideas
+            res = generate_ideas(topic, passages, n)
+        st.session_state.ideas_result = res
+        st.session_state.ideas_chat = []
+    elif not topic:
+        st.info("Enter a topic to generate project ideas.")
+
+    res = st.session_state.get("ideas_result")
+    if res:
+        if res["ideas"]:
+            _render_ideas(res["ideas"])
+        else:
+            st.warning("Couldn't parse the ideas cleanly — showing the raw output:")
+            st.markdown(res["raw"])
+        if res.get("sources"):
+            with st.expander(f"📄 Papers these ideas drew on ({len(res['sources'])})"):
+                for s in res["sources"]:
+                    st.markdown(f"**[{s['n']}] {s['title'][:75]}** · "
+                                f"[arXiv:{s['arxiv_id']}]({s['url']})")
+        st.markdown("---")
+        followup_chat("ideas", res["raw"], res.get("sources", []))
+
+
 # ---- Auth gate: the app is locked until someone signs in ----
 if "user" not in st.session_state:
     render_auth_page()
@@ -712,7 +769,7 @@ with st.sidebar:
     sidebar_profile()
 
 # ---- Top navigation: section tabs across the top ----
-NAV = ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"]
+NAV = ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty", "🧪 Idea Lab"]
 st.session_state.setdefault("view", NAV[0])
 for col, name in zip(st.columns(len(NAV)), NAV):
     if col.button(name, key=f"nav_{name}", use_container_width=True,
@@ -730,14 +787,16 @@ elif VIEW == "⚖️ Compare":
     render_compare_view()
 elif VIEW == "🎓 Quiz":
     render_quiz_view()
-else:
+elif VIEW == "💡 Find Novelty":
     render_novelty_view()
+else:
+    render_ideas_view()
 
 # ---- Log out: pinned to the bottom of the left panel ----
 with st.sidebar:
     st.divider()
     if st.button("🚪  Log out", use_container_width=True):
         for k in ("user", "session_id", "active_novelty",
-                  "compare_result", "quiz_result", "view"):
+                  "compare_result", "quiz_result", "ideas_result", "view"):
             st.session_state.pop(k, None)
         st.rerun()
