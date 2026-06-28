@@ -34,12 +34,40 @@ MAP_PATH = DATA_DIR / "research_map.json"
 # ----------------------------------------------------------------- VIBRANT THEME
 _THEME_CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 /* hide default Streamlit chrome for a cleaner, app-like feel */
 #MainMenu, footer {visibility: hidden;}
 [data-testid="stHeader"] {background: transparent;}
 
+/* modern typography */
+html, body, [class*="css"], .stMarkdown, p, span, div, button, input, textarea, label {
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+.ps-title, .ps-hero-title, h1, h2, h3 { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+/* atmospheric depth — soft colour glows in the corners, not per-element shine */
+.stApp {
+  background:
+    radial-gradient(1000px 680px at 8% -5%,  rgba(99,102,180,0.18), transparent 60%),
+    radial-gradient(900px 600px  at 96% 6%,  rgba(60,140,150,0.13), transparent 55%),
+    radial-gradient(800px 560px  at 50% 108%, rgba(126,92,176,0.14), transparent 60%),
+    #0b0d15;
+  background-attachment: fixed;
+}
+
+/* translucent sidebar so the atmospheric background shows through */
+section[data-testid="stSidebar"] > div {
+  background: rgba(13,15,24,0.55); backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
 /* pull the whole page up (Streamlit leaves a big top gap by default) */
 .block-container, [data-testid="stMainBlockContainer"] { padding-top: 1.8rem; }
+
+/* micro-interaction: buttons lift on hover */
+.stButton > button { transition: transform .12s ease, filter .12s ease, border-color .12s ease; }
+.stButton > button:hover { transform: translateY(-1px); }
 
 /* brand header — no box, sits flush on the canvas */
 .ps-header { padding: 0; margin: 0 0 10px 0; }
@@ -68,18 +96,22 @@ section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }
 /* example-question chips */
 .stButton > button[kind="secondary"] { border-radius: 10px; border-color: #262a3b; }
 
-/* chat bubbles + cards: softer, rounded */
-[data-testid="stChatMessage"] { border-radius: 14px; }
-[data-testid="stExpander"] { border-radius: 12px; border-color: #262a3b; }
+/* chat bubbles + cards: glassy, rounded */
+[data-testid="stChatMessage"] { border-radius: 16px;
+  background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.06); }
+[data-testid="stExpander"] { border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); }
 .stChatInput textarea { border-radius: 12px; }
 
 /* login/register card */
 .ps-authcard { text-align: center; margin: 8px 0 4px; }
 .ps-authcard h3 { margin-bottom: 2px; }
 
-/* sidebar profile card */
-.ps-profile { display: flex; align-items: center; gap: 11px; background: #181b26;
-  border: 1px solid #262a3b; border-radius: 12px; padding: 10px 12px; margin: 4px 0 6px; }
+/* sidebar profile card — frosted glass */
+.ps-profile { display: flex; align-items: center; gap: 11px;
+  background: rgba(34,38,58,0.55); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.09); border-radius: 14px;
+  padding: 11px 13px; margin: 4px 0 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
 .ps-avatar { width: 38px; height: 38px; border-radius: 50%; background: #4a4f86;
   color: #eceef6; display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 16px; flex: 0 0 auto; }
@@ -88,11 +120,13 @@ section[data-testid="stSidebar"] div[role="radiogroup"] input { display: none; }
 .ps-badge { display: inline-block; background: #2a2f52; color: #b9bdf0; font-size: 11px;
   font-weight: 600; padding: 2px 11px; border-radius: 20px; margin: 0 0 6px; }
 
-/* section hero (per view) */
-.ps-hero { background: linear-gradient(100deg, #1c2036, #24294b); border: 1px solid #2e3357;
-  border-radius: 14px; padding: 18px 22px; margin-bottom: 14px; }
-.ps-hero-title { font-size: 23px; font-weight: 800; color: #e7e8f2; letter-spacing: -0.3px; }
-.ps-hero-sub { font-size: 13px; color: rgba(231,232,242,0.6); margin-top: 3px; }
+/* section hero (per view) — frosted glass with a soft gradient sheen */
+.ps-hero { background: linear-gradient(120deg, rgba(46,50,88,0.55), rgba(26,30,54,0.42));
+  backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px; padding: 22px 26px; margin-bottom: 16px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.32); }
+.ps-hero-title { font-size: 26px; font-weight: 700; color: #f1f2fa; letter-spacing: -0.4px; }
+.ps-hero-sub { font-size: 13.5px; color: rgba(241,242,250,0.64); margin-top: 4px; }
 
 /* numbered stepper */
 .ps-stepper { display: flex; align-items: center; gap: 10px; margin: 2px 0 16px; }
