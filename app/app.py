@@ -616,18 +616,24 @@ if "user" not in st.session_state:
     render_auth_page()
     st.stop()
 
+# Left panel: just the brand + user (Chat view adds New chat + history below;
+# Log out is pinned at the very bottom further down).
 with st.sidebar:
     st.title("📚 PaperSage")
     st.caption(f"👤 Signed in as **{st.session_state.user['username']}**")
-    VIEW = st.radio("View", ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"],
-                    label_visibility="collapsed")
-    if st.button("🚪  Log out", use_container_width=True):
-        for k in ("user", "session_id", "active_novelty", "compare_result", "quiz_result"):
-            st.session_state.pop(k, None)
-        st.rerun()
-    st.divider()
 
 render_header()
+
+# ---- Top navigation: section tabs across the top ----
+NAV = ["💬 Chat", "📍 Research Map", "⚖️ Compare", "🎓 Quiz", "💡 Find Novelty"]
+st.session_state.setdefault("view", NAV[0])
+for col, name in zip(st.columns(len(NAV)), NAV):
+    if col.button(name, key=f"nav_{name}", use_container_width=True,
+                  type="primary" if st.session_state.view == name else "secondary"):
+        st.session_state.view = name
+        st.rerun()
+st.divider()
+VIEW = st.session_state.view
 
 if VIEW == "💬 Chat":
     render_chat_view()
@@ -639,3 +645,12 @@ elif VIEW == "🎓 Quiz":
     render_quiz_view()
 else:
     render_novelty_view()
+
+# ---- Log out: pinned to the bottom of the left panel ----
+with st.sidebar:
+    st.divider()
+    if st.button("🚪  Log out", use_container_width=True):
+        for k in ("user", "session_id", "active_novelty",
+                  "compare_result", "quiz_result", "view"):
+            st.session_state.pop(k, None)
+        st.rerun()
