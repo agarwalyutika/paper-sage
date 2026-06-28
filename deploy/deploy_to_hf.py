@@ -68,15 +68,23 @@ def main() -> None:
     try:
         if ft.exists():
             api.add_space_variable(SPACE_REPO, "RERANKER_MODEL", MODEL_REPO)
-        # Free DuckDuckGo returns junk from datacenter IPs -> turn web search off on the
-        # demo so out-of-corpus questions answer from the model's general knowledge.
-        api.add_space_variable(SPACE_REPO, "WEB_SEARCH_ENABLED", "false")
+        # Web search ON via Tavily (reliable from servers, unlike free DuckDuckGo).
+        api.add_space_variable(SPACE_REPO, "WEB_SEARCH_ENABLED", "true")
+        api.add_space_variable(SPACE_REPO, "WEB_SEARCH_BACKEND", "tavily")
+
         groq = os.getenv("GROQ_API_KEY", "")
         if groq:
             api.add_space_secret(SPACE_REPO, "GROQ_API_KEY", groq)
-            print("Set GROQ_API_KEY secret + RERANKER_MODEL variable on the Space.")
         else:
             print("WARNING: GROQ_API_KEY not in .env — set it manually in the Space settings.")
+
+        tavily = os.getenv("TAVILY_API_KEY", "")
+        if tavily:
+            api.add_space_secret(SPACE_REPO, "TAVILY_API_KEY", tavily)
+            print("Set GROQ_API_KEY + TAVILY_API_KEY secrets and web-search variables.")
+        else:
+            print("WARNING: TAVILY_API_KEY not in .env — add it (free key at https://tavily.com) "
+                  "or web search will fail on the demo.")
     except Exception as e:
         print(f"\nCouldn't set secrets via API ({e}).")
         print("Set them manually:  Space → Settings → Variables and secrets:")
