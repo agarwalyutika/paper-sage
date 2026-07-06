@@ -329,6 +329,13 @@ def followup_chat(key: str, context: str, sources: list[dict]) -> None:
 
 
 # =================================================================== CHAT VIEW
+def _is_image(f) -> bool:
+    """True if an uploaded file is an image (→ vision path) vs a document (→ RAG)."""
+    if (getattr(f, "type", "") or "").startswith("image"):
+        return True
+    return f.name.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"))
+
+
 def render_chat_view() -> None:
     uid = st.session_state.user["id"]
     if "session_id" not in st.session_state:
@@ -392,8 +399,8 @@ def render_chat_view() -> None:
                 diagram_widget(m["content"], key=f"dia_{sid}_{i}")
 
     user_input = st.chat_input(
-        "Ask about the papers…  (📎 attach a PDF to ask about your own file)",
-        accept_file="multiple", file_type=["pdf", "txt", "md"],
+        "Ask about the papers…  (📎 attach a PDF, or an image to explain)",
+        accept_file="multiple", file_type=["pdf", "txt", "md", "png", "jpg", "jpeg", "webp"],
     )
     # A question can come from the chat box OR from an example chip.
     prompt = user_input.text if user_input else (pending or "")
@@ -401,13 +408,38 @@ def render_chat_view() -> None:
     if not (prompt or attached):
         return
 
-    if attached:
-        sig = tuple((f.name, f.size) for f in attached)
+    images = [f for f in (attached or []) if _is_image(f)]
+    docs = [f for f in (attached or []) if not _is_image(f)]
+
+    # ---- Vision path: an image was attached -> explain it (multimodal) ----
+    if images:
+        img = images[0]
+        store.add_message(sid, "user", prompt or f"[image: {img.name}]")
+        current = next((x for x in store.list_sessions(uid) if x["id"] == sid), None)
+        if current and current["title"] == "New chat":
+            store.rename_session(sid, (prompt or f"Image: {img.name}")[:40])
+        with st.chat_message("user"):
+            st.image(img.getvalue(), width=300)
+            if prompt:
+                st.markdown(prompt)
+        with st.chat_message("assistant"):
+            with st.spinner("Looking at your image…"):
+                from src.vision.explain import describe_image
+                ans = describe_image(img.getvalue(),
+                                     getattr(img, "type", "") or "image/png", prompt)
+            body = "🖼️ *Answered from your uploaded image.*\n\n" + ans
+            st.markdown(body)
+        store.add_message(sid, "assistant", body)
+        st.rerun()
+
+    # ---- Document path: index uploaded PDFs/text for RAG ----
+    if docs:
+        sig = tuple((f.name, f.size) for f in docs)
         if st.session_state.get("upload_sig") != sig:
             with st.spinner("Reading and indexing your file(s)…"):
                 r = load_retriever()
                 idx = UploadedIndex(r.embedder, r.reranker)
-                idx.build([(f.name, f.getvalue()) for f in attached])
+                idx.build([(f.name, f.getvalue()) for f in docs])
             st.session_state.uploaded_index = idx
             st.session_state.upload_sig = sig
         st.session_state.use_uploads = True

@@ -85,6 +85,9 @@ class Settings:
     # If the primary model hits its daily rate limit, fall back to this faster,
     # higher-quota model so the app keeps working.
     GROQ_FALLBACK_MODEL = "llama-3.1-8b-instant"
+    # Multimodal model that can "see" images (for the Vision Q&A feature).
+    GROQ_VISION_MODEL = os.getenv("GROQ_VISION_MODEL",
+                                  "meta-llama/llama-4-scout-17b-16e-instruct")
 
     # Claude (optional, paid) -- used only if LLM_BACKEND == "claude"
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

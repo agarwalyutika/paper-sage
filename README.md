@@ -37,6 +37,7 @@ facts).
 - **Conversational chat with memory** — multi-turn follow-ups ("what about its limitations?") via question condensing
 - **Persistent sessions** — ChatGPT-style sidebar of saved chats (SQLite); your history survives restarts
 - **Bring your own documents** — attach a PDF/txt in the chat box and ask questions about *your* file (in-memory index, page-level citations)
+- **Vision Q&A (multimodal)** — attach an **image** (a diagram, chart, architecture, or figure/screenshot from a paper) and ask about it; a multimodal model (Llama 4 Scout on Groq) explains what it shows — same chat box, routed automatically
 - **Paper comparison** — pick 2–4 corpus papers **and/or upload your own PDFs**, and get a detailed LLM-synthesized side-by-side comparison table (problem, method, novelty, dataset, results, strengths, limitations) — multi-document synthesis, with a **follow-up chat** about the comparison
 - **Implementation-code generation** — ask *"implement this loss/algorithm in PyTorch"* and it generates runnable code grounded in the paper's equations, with source-citing comments
 - **Quiz & study generator** — turn any paper (corpus or uploaded) into MCQs, flashcards, coding exercises, or interview questions (structured JSON → interactive cards with hidden answers)
