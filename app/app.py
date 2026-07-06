@@ -125,6 +125,24 @@ section[data-testid="stSidebar"] > div {
 [data-testid="stMarkdownContainer"] td:first-child { color: #908d85; font-weight: 600;
   text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
 [data-testid="stMarkdownContainer"] td:nth-child(n+2) { color: #ddd9d0; }
+
+/* ---------- landing / about page ---------- */
+.lp-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+  color: #ff5436; text-align: center; margin: 30px 0 14px; }
+.lp-title { font-family: 'Syne', sans-serif; font-size: 66px; font-weight: 800; line-height: 0.95;
+  letter-spacing: -2px; color: #f2efe9; text-align: center; margin: 0; }
+.lp-sub { font-size: 18px; color: #b8b4ab; text-align: center; max-width: 620px;
+  margin: 16px auto 6px; line-height: 1.55; }
+.lp-stats { display: flex; justify-content: center; gap: 34px; flex-wrap: wrap; margin: 30px 0 6px; }
+.lp-stat { text-align: center; }
+.lp-statnum { font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 800; color: #ff5436; }
+.lp-statlbl { font-size: 11px; color: #908d85; text-transform: uppercase; letter-spacing: 1px; }
+.lp-feats { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  margin: 28px auto; max-width: 760px; }
+.lp-feat { flex: 1 1 340px; background: #141413; border: 1px solid rgba(242,239,233,0.10);
+  border-radius: 8px; padding: 14px 16px; }
+.lp-feat b { color: #f2efe9; }
+.lp-feat span { color: #908d85; font-size: 13px; }
 </style>
 """
 
@@ -186,8 +204,48 @@ def stepper(steps: list[tuple[str, str]], active: int = 0) -> None:
 inject_theme()
 
 
+def render_landing_page() -> None:
+    """A marketing 'about' page shown first; the CTA leads into sign-up/login."""
+    st.markdown('<div class="lp-eyebrow">Agentic RAG · Live demo</div>', unsafe_allow_html=True)
+    st.markdown('<div class="lp-title">📚 PaperSage</div>', unsafe_allow_html=True)
+    st.markdown('<div class="lp-sub">Ask 200 machine-learning research papers in plain English — '
+                'and get <b>grounded, cited answers</b>, with an honest "I don\'t know" when the '
+                'papers don\'t cover it.</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="lp-stats">'
+        '<div class="lp-stat"><div class="lp-statnum">200</div><div class="lp-statlbl">ML papers</div></div>'
+        '<div class="lp-stat"><div class="lp-statnum">0.89</div><div class="lp-statlbl">nDCG@10</div></div>'
+        '<div class="lp-stat"><div class="lp-statnum">+8%</div><div class="lp-statlbl">fine-tuned reranker</div></div>'
+        '<div class="lp-stat"><div class="lp-statnum">8</div><div class="lp-statlbl">tools</div></div>'
+        '</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="lp-feats">'
+        '<div class="lp-feat"><b>🔍 Hybrid retrieval + fine-tuned reranker</b><br>'
+        '<span>BM25 + semantic search, re-scored by a cross-encoder I fine-tuned myself.</span></div>'
+        '<div class="lp-feat"><b>✅ Grounded &amp; cited</b><br>'
+        '<span>Every claim cites a real paper; citations are validated — no hallucinated facts.</span></div>'
+        '<div class="lp-feat"><b>🖼️ Multimodal</b><br>'
+        '<span>Upload a diagram, chart, or figure and it explains what it shows.</span></div>'
+        '<div class="lp-feat"><b>🧪 8 tools</b><br>'
+        '<span>Chat, Compare, Quiz, Find Novelty, Idea Lab, Research Map, and more.</span></div>'
+        '</div>', unsafe_allow_html=True)
+
+    _, mid, _ = st.columns([1, 1.2, 1])
+    with mid:
+        if st.button("🚀  Get Started", type="primary", use_container_width=True):
+            st.session_state.show_auth = True
+            st.rerun()
+    st.markdown('<div class="lp-sub" style="font-size:13px; margin-top:8px;">'
+                'Free · create an account in seconds</div>', unsafe_allow_html=True)
+
+
 def render_auth_page() -> None:
     """The login / register screen shown before anyone is signed in."""
+    if st.button("← Back", key="auth_back"):
+        st.session_state.show_auth = False
+        st.rerun()
     render_header()
     _, mid, _ = st.columns([1, 1.4, 1])
     with mid:
@@ -792,9 +850,12 @@ def render_ideas_view() -> None:
         followup_chat("ideas", res["raw"], res.get("sources", []))
 
 
-# ---- Auth gate: the app is locked until someone signs in ----
+# ---- Gate: landing/about page → sign-up/login → app ----
 if "user" not in st.session_state:
-    render_auth_page()
+    if st.session_state.get("show_auth"):
+        render_auth_page()
+    else:
+        render_landing_page()
     st.stop()
 
 # Left panel: brand + profile card (Chat view adds New chat + history below;
