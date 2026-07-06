@@ -227,7 +227,8 @@ def render_auth_page() -> None:
         st.markdown('<div class="ps-authcard"><h3>Welcome 👋</h3>'
                     '<p>Log in or create an account to start exploring ML papers.</p></div>',
                     unsafe_allow_html=True)
-        tab_login, tab_register = st.tabs(["🔑  Log in", "✨  Create account"])
+        tab_login, tab_register, tab_reset = st.tabs(
+            ["🔑  Log in", "✨  Create account", "🔓  Forgot password"])
 
         with tab_login:
             with st.form("login_form"):
@@ -260,8 +261,23 @@ def render_auth_page() -> None:
                     if ok:
                         st.caption("👆 Now switch to the **Log in** tab.")
 
-        st.caption("🔒 Your password is salted + hashed (PBKDF2-SHA256) — it's never "
-                   "stored in plain text.")
+        with tab_reset:
+            st.caption("Confirm your account's email + username, then set a new password.")
+            with st.form("reset_form"):
+                re_email = st.text_input("Account email")
+                re_user = st.text_input("Username")
+                np1 = st.text_input("New password", type="password", help="At least 6 characters")
+                np2 = st.text_input("Confirm new password", type="password")
+                submitted = st.form_submit_button("Reset password", type="primary",
+                                                  use_container_width=True)
+            if submitted:
+                if np1 != np2:
+                    st.error("Passwords don't match.")
+                else:
+                    ok, msg = auth.reset_password(re_email, re_user, np1)
+                    (st.success if ok else st.error)(msg)
+                    if ok:
+                        st.caption("👆 Now switch to the **Log in** tab.")
 
 
 @st.cache_resource(show_spinner="Loading models + indexes (first time only)...")

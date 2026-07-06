@@ -104,5 +104,24 @@ def verify_user(login: str, password: str) -> dict | None:
     return None
 
 
+def reset_password(email: str, username: str, new_password: str) -> tuple[bool, str]:
+    """Reset a password after verifying the account's email + username match.
+    (A production version would email a one-time reset link; this is a demo-grade
+    identity check that needs no email server.)"""
+    email, username = email.strip().lower(), username.strip()
+    if len(new_password) < 6:
+        return False, "New password must be at least 6 characters."
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT id FROM users WHERE email = ? AND lower(username) = ?",
+            (email, username.lower()),
+        ).fetchone()
+        if not r:
+            return False, "No account matches that email + username."
+        conn.execute("UPDATE users SET pwd_hash = ? WHERE id = ?",
+                     (_make_hash(new_password), r["id"]))
+    return True, "Password updated — log in with your new password."
+
+
 # Make sure the users table exists as soon as this module is imported.
 init_auth_db()
