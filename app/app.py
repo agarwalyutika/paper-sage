@@ -27,133 +27,171 @@ from src.chat.conversation import answer_in_conversation
 from src.citations.validator import validate_citations
 from src.explore.diagram import generate_mermaid
 
-st.set_page_config(page_title="PaperSage", page_icon="📚", layout="wide")
+st.set_page_config(page_title="PaperSage", page_icon="🪶", layout="wide")
 
 MAP_PATH = DATA_DIR / "research_map.json"
 
-# --------------------------------------------------------------- EDITORIAL THEME
+# --------------------------------------------------------------- OXBLOOD THEME
+# One "oxblood" identity in two moods: dark "Library" + light "Parchment".
+# The big stylesheet uses var(--token); we inject the matching values per mode.
+PALETTES = {
+    "dark": {   # Library
+        "bg": "#1b1012", "sidebar": "#170d0f", "surface": "#271719",
+        "text": "#eee0d6", "text-soft": "#d8c6bd", "muted": "#b0938c",
+        "accent": "#c89a4c", "accent-ink": "#1b1012",
+        "line": "rgba(238,224,214,0.12)", "line2": "rgba(238,224,214,0.24)",
+    },
+    "light": {  # Parchment
+        "bg": "#ece2cf", "sidebar": "#e4d8c2", "surface": "#f5eddc",
+        "text": "#2b2118", "text-soft": "#4a3d2f", "muted": "#6f6353",
+        "accent": "#7c2f2f", "accent-ink": "#f5eddc",
+        "line": "rgba(43,33,24,0.14)", "line2": "rgba(43,33,24,0.26)",
+    },
+}
+
+
+def _theme() -> str:
+    return st.session_state.get("ui_theme", "dark")
+
+
+def _palette_css() -> str:
+    p = PALETTES[_theme()]
+    return "<style>:root{" + "".join(f"--{k}:{v};" for k, v in p.items()) + "}</style>"
+
+
 _THEME_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 
-/* hide default Streamlit chrome */
 #MainMenu, footer {visibility: hidden;}
 [data-testid="stHeader"] {background: transparent;}
 
-/* EDITORIAL typography — Inter for body, Syne for big display headlines */
-html, body, [class*="css"], .stMarkdown, p, span, div, button, input, textarea, label {
+/* typography */
+html, body, [class*="css"], .stMarkdown, p, span, div, button, input, textarea, label, li {
   font-family: 'Inter', -apple-system, sans-serif;
 }
+.stApp, .stMarkdown, p, span, label, li, h1, h2, h3, h4 { color: var(--text); }
 .ps-title, .ed-title, h1, h2, h3 { font-family: 'Syne', 'Inter', sans-serif; }
-a, a:visited { color: #ff5436; }
+a, a:visited { color: var(--accent); }
 
-/* flat near-black 'gallery' canvas — editorial is flat and type-led, not glassy */
-.stApp { background: #0c0c0d; }
-section[data-testid="stSidebar"] > div {
-  background: #0e0e0f; border-right: 1px solid rgba(242,239,233,0.10);
-}
-
-/* lift + cap the page width like a magazine column */
+/* grounds */
+.stApp { background: var(--bg); }
+section[data-testid="stSidebar"] > div { background: var(--sidebar); border-right: 1px solid var(--line); }
 .block-container, [data-testid="stMainBlockContainer"] { padding-top: 1.6rem; max-width: 1180px; }
 
-/* ---------- magazine masthead (the per-view section hero) ---------- */
-.ed-masthead { margin: 2px 0 24px; padding-bottom: 16px; border-bottom: 2px solid #ff5436; }
+/* masthead */
+.ed-masthead { margin: 2px 0 24px; padding-bottom: 16px; border-bottom: 2px solid var(--accent); }
 .ed-kicker { font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
-  color: #ff5436; margin-bottom: 10px; }
-.ed-title { font-size: 54px; font-weight: 800; line-height: 0.96; letter-spacing: -1.6px; color: #f2efe9; }
-.ed-sub { font-size: 15px; color: #908d85; margin-top: 12px; max-width: 620px; line-height: 1.5; }
+  color: var(--accent); margin-bottom: 10px; }
+.ed-title { font-size: 54px; font-weight: 800; line-height: 0.96; letter-spacing: -1.6px; color: var(--text); }
+.ed-sub { font-size: 15px; color: var(--muted); margin-top: 12px; max-width: 620px; line-height: 1.5; }
 
-/* buttons — sharp, flat, editorial */
+/* buttons */
 .stButton > button { border-radius: 4px; font-weight: 600;
   transition: transform .1s ease, background .12s ease, color .12s ease, border-color .12s ease; }
 .stButton > button:hover { transform: translateY(-1px); }
 .stButton > button[kind="primary"], .stFormSubmitButton > button {
-  background: #ff5436; border: none; color: #0c0c0d; font-weight: 700; letter-spacing: 0.2px;
-}
-.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { background: #ff6a50; }
+  background: var(--accent); border: none; color: var(--accent-ink); font-weight: 700; letter-spacing: 0.2px; }
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover { filter: brightness(1.08); }
 .stButton > button[kind="secondary"] {
-  background: transparent; border: 1px solid rgba(242,239,233,0.18); color: #cfccc4; }
-.stButton > button[kind="secondary"]:hover { border-color: #ff5436; color: #f2efe9; }
+  background: transparent; border: 1px solid var(--line2); color: var(--text); }
+.stButton > button[kind="secondary"]:hover { border-color: var(--accent); color: var(--accent); }
 
-/* brand (sidebar) */
-.ps-header { padding: 0; margin: 0 0 8px 0; }
-.ps-title { font-size: 26px; font-weight: 800; color: #f2efe9; letter-spacing: -0.8px; }
-.ps-tag   { font-size: 13px; color: #908d85; margin-top: 2px; }
+/* brand */
+.ps-header { padding: 0; margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px; }
+.ps-title { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.8px; }
+.ps-tag   { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-/* inputs + cards — sharp corners, flat surfaces */
-.stChatInput textarea, input, textarea { border-radius: 4px !important; }
-[data-baseweb="select"] > div { border-radius: 4px !important; }
-[data-testid="stChatMessage"] { border-radius: 6px;
-  background: #131312; border: 1px solid rgba(242,239,233,0.07); }
-[data-testid="stExpander"] { border-radius: 6px;
-  border: 1px solid rgba(242,239,233,0.12); background: #111110; }
+/* inputs + cards */
+.stChatInput textarea, input, textarea { border-radius: 4px !important; background: var(--surface) !important; color: var(--text) !important; }
+[data-baseweb="select"] > div { border-radius: 4px !important; background: var(--surface) !important; }
+[data-testid="stChatMessage"] { border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+[data-testid="stExpander"] { border-radius: 6px; border: 1px solid var(--line); background: var(--surface); }
 
-/* login/register card */
 .ps-authcard { text-align: center; margin: 8px 0 4px; }
 .ps-authcard h3 { margin-bottom: 2px; }
 
-/* sidebar profile card — flat, editorial (square accent avatar, outline badge) */
-.ps-profile { display: flex; align-items: center; gap: 11px; background: #141413;
-  border: 1px solid rgba(242,239,233,0.12); border-radius: 6px; padding: 11px 12px; margin: 4px 0 6px; }
-.ps-avatar { width: 38px; height: 38px; border-radius: 4px; background: #ff5436;
-  color: #0c0c0d; display: flex; align-items: center; justify-content: center;
+/* profile card */
+.ps-profile { display: flex; align-items: center; gap: 11px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; padding: 11px 12px; margin: 4px 0 6px; }
+.ps-avatar { width: 38px; height: 38px; border-radius: 4px; background: var(--accent);
+  color: var(--accent-ink); display: flex; align-items: center; justify-content: center;
   font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; flex: 0 0 auto; }
-.ps-pname { font-weight: 700; color: #f2efe9; font-size: 14px; line-height: 1.15; }
-.ps-prole { color: #908d85; font-size: 12px; }
-.ps-badge { display: inline-block; background: transparent; color: #ff5436; border: 1px solid #ff5436;
+.ps-pname { font-weight: 700; color: var(--text); font-size: 14px; line-height: 1.15; }
+.ps-prole { color: var(--muted); font-size: 12px; }
+.ps-badge { display: inline-block; background: transparent; color: var(--accent); border: 1px solid var(--accent);
   font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
   padding: 2px 9px; border-radius: 3px; margin: 0 0 6px; }
 
-/* stepper — editorial: square tiles, accent fill when lit */
+/* stepper */
 .ps-stepper { display: flex; align-items: center; gap: 12px; margin: 2px 0 20px; }
 .ps-step { display: flex; align-items: center; gap: 10px; }
 .ps-stepnum { width: 30px; height: 30px; border-radius: 4px; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Syne', sans-serif; font-weight: 800;
-  background: transparent; color: #6f6c65; border: 1px solid rgba(242,239,233,0.18); }
-.ps-step.on .ps-stepnum { background: #ff5436; color: #0c0c0d; border-color: #ff5436; }
-.ps-steptitle { font-weight: 700; color: #f2efe9; font-size: 13px; line-height: 1.1; }
-.ps-stepsub { color: #908d85; font-size: 11px; }
-.ps-stepline { flex: 1 1 auto; height: 1px; background: rgba(242,239,233,0.14); }
+  background: transparent; color: var(--muted); border: 1px solid var(--line2); }
+.ps-step.on .ps-stepnum { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ps-steptitle { font-weight: 700; color: var(--text); font-size: 13px; line-height: 1.1; }
+.ps-stepsub { color: var(--muted); font-size: 11px; }
+.ps-stepline { flex: 1 1 auto; height: 1px; background: var(--line2); }
 
-/* tables (Compare) — editorial: accent top rule, clean hairlines, single ink */
-[data-testid="stMarkdownContainer"] table { border-collapse: collapse; width: 100%;
-  border-top: 2px solid #ff5436; }
-[data-testid="stMarkdownContainer"] th { color: #f2efe9; text-align: left; padding: 11px 12px;
-  font-family: 'Syne', sans-serif; font-weight: 700; border-bottom: 1px solid rgba(242,239,233,0.20); }
-[data-testid="stMarkdownContainer"] td { padding: 11px 12px; border-bottom: 1px solid rgba(242,239,233,0.08); }
-[data-testid="stMarkdownContainer"] td:first-child { color: #908d85; font-weight: 600;
+/* tables */
+[data-testid="stMarkdownContainer"] table { border-collapse: collapse; width: 100%; border-top: 2px solid var(--accent); }
+[data-testid="stMarkdownContainer"] th { color: var(--text); text-align: left; padding: 11px 12px;
+  font-family: 'Syne', sans-serif; font-weight: 700; border-bottom: 1px solid var(--line2); }
+[data-testid="stMarkdownContainer"] td { padding: 11px 12px; border-bottom: 1px solid var(--line); }
+[data-testid="stMarkdownContainer"] td:first-child { color: var(--muted); font-weight: 600;
   text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
-[data-testid="stMarkdownContainer"] td:nth-child(n+2) { color: #ddd9d0; }
+[data-testid="stMarkdownContainer"] td:nth-child(n+2) { color: var(--text-soft); }
 
-/* ---------- landing / intro page (brand-first, minimal) ---------- */
+/* landing */
 .lp-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
-  color: #ff5436; text-align: center; margin: 64px 0 18px; }
-.lp-title { font-family: 'Syne', sans-serif; font-size: 74px; font-weight: 800; line-height: 0.95;
-  letter-spacing: -2.5px; color: #f2efe9; text-align: center; margin: 0; }
-.lp-divider { width: 60px; height: 3px; background: #ff5436; margin: 28px auto; border: none; }
-.lp-tagline { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 600; color: #d8d4cb;
+  color: var(--accent); text-align: center; margin: 34px 0 18px; }
+.lp-logo { text-align: center; margin: 0 0 4px; line-height: 0; }
+.lp-title { font-family: 'Syne', sans-serif; font-size: 66px; font-weight: 800; line-height: 0.95;
+  letter-spacing: -2.5px; color: var(--text); text-align: center; margin: 0; }
+.lp-divider { width: 60px; height: 3px; background: var(--accent); margin: 26px auto; border: none; }
+.lp-tagline { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 600; color: var(--text-soft);
   text-align: center; margin: 0 auto 16px; }
-.lp-sub { font-size: 17px; color: #908d85; text-align: center; max-width: 560px;
+.lp-sub { font-size: 17px; color: var(--muted); text-align: center; max-width: 560px;
   margin: 0 auto 12px; line-height: 1.6; }
-.lp-foot { font-size: 13px; color: #6f6c65; text-align: center; margin-top: 12px; }
+.lp-foot { font-size: 13px; color: var(--muted); text-align: center; margin-top: 12px; }
 </style>
 """
 
 
 def inject_theme() -> None:
-    st.markdown(_THEME_CSS, unsafe_allow_html=True)
+    st.session_state.setdefault("ui_theme", "dark")
+    st.markdown(_palette_css() + _THEME_CSS, unsafe_allow_html=True)
+
+
+def logo_svg(size: int = 30) -> str:
+    """The PaperSage mark — a bookplate monogram, drawn in the current accent colour."""
+    c = PALETTES[_theme()]["accent"]
+    return (
+        f'<svg viewBox="0 0 64 64" width="{size}" height="{size}" fill="none" '
+        f'style="vertical-align:middle" aria-label="PaperSage logo">'
+        f'<rect x="12" y="12" width="40" height="40" rx="6" fill="none" stroke="{c}" stroke-width="3"/>'
+        f'<rect x="17" y="17" width="30" height="30" rx="3" fill="none" stroke="{c}" '
+        f'stroke-width="1.4" opacity="0.5"/>'
+        f'<path d="M26 43 V21 h10 a7.5 7.5 0 0 1 0 15 h-10" fill="none" stroke="{c}" '
+        f'stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    )
+
+
+def theme_toggle(key: str) -> None:
+    """A button that flips the app between the dark (Library) and light (Parchment) mode."""
+    cur = _theme()
+    if st.button("☀️  Light mode" if cur == "dark" else "🌙  Dark mode",
+                 key=key, use_container_width=True):
+        st.session_state.ui_theme = "light" if cur == "dark" else "dark"
+        st.rerun()
 
 
 def render_header() -> None:
-    st.markdown(
-        '<div class="ps-header">'
-        '<div class="ps-title">📚 PaperSage</div>'
-        '<div class="ps-tag">Cited answers from real ML research papers · '
-        'hybrid retrieval + reranking + grounded generation</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="ps-header">{logo_svg(34)}'
+                f'<span class="ps-title">PaperSage</span></div>',
+                unsafe_allow_html=True)
 
 
 def sidebar_profile() -> None:
@@ -200,8 +238,12 @@ inject_theme()
 
 def render_landing_page() -> None:
     """A clean, brand-first intro page; the CTA leads into sign-up/login."""
+    _, tog = st.columns([4, 1])
+    with tog:
+        theme_toggle("toggle_landing")
     st.markdown('<div class="lp-eyebrow">Your AI research companion</div>', unsafe_allow_html=True)
-    st.markdown('<div class="lp-title">📚 PaperSage</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="lp-logo">{logo_svg(76)}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="lp-title">PaperSage</div>', unsafe_allow_html=True)
     st.markdown('<hr class="lp-divider">', unsafe_allow_html=True)
     st.markdown('<div class="lp-tagline">Wisdom, drawn from the papers.</div>', unsafe_allow_html=True)
     st.markdown('<div class="lp-sub">Ask machine-learning research papers anything, in plain English '
@@ -218,9 +260,13 @@ def render_landing_page() -> None:
 
 def render_auth_page() -> None:
     """The login / register screen shown before anyone is signed in."""
-    if st.button("← Back", key="auth_back"):
-        st.session_state.show_auth = False
-        st.rerun()
+    c1, _, c3 = st.columns([1, 3, 1])
+    with c1:
+        if st.button("← Back", key="auth_back"):
+            st.session_state.show_auth = False
+            st.rerun()
+    with c3:
+        theme_toggle("toggle_auth")
     render_header()
     _, mid, _ = st.columns([1, 1.4, 1])
     with mid:
@@ -852,7 +898,8 @@ if "user" not in st.session_state:
 # Left panel: brand + profile card (Chat view adds New chat + history below;
 # Log out is pinned at the very bottom further down).
 with st.sidebar:
-    st.title("📚 PaperSage")
+    st.markdown(f'<div class="ps-header">{logo_svg(30)}'
+                f'<span class="ps-title">PaperSage</span></div>', unsafe_allow_html=True)
     sidebar_profile()
 
 # ---- Top navigation: section tabs across the top ----
@@ -882,6 +929,7 @@ else:
 # ---- Log out: pinned to the bottom of the left panel ----
 with st.sidebar:
     st.divider()
+    theme_toggle("toggle_sidebar")
     if st.button("🚪  Log out", use_container_width=True):
         for k in ("user", "session_id", "active_novelty",
                   "compare_result", "quiz_result", "ideas_result", "view"):

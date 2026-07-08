@@ -3,10 +3,10 @@
 # polish (gradient header, pill nav, gradient buttons) is CSS injected in app.py.
 [theme]
 base = "dark"
-primaryColor = "#ff5436"               # bold editorial coral — one confident accent
-backgroundColor = "#0c0c0d"            # near-black 'gallery' canvas
-secondaryBackgroundColor = "#141413"   # sidebar / cards / inputs
-textColor = "#f2efe9"                  # warm off-white 'ink'
+primaryColor = "#c89a4c"               # oxblood 'Library' — antique brass accent
+backgroundColor = "#1b1012"            # deep oxblood ground
+secondaryBackgroundColor = "#271719"   # sidebar / cards / inputs
+textColor = "#eee0d6"                  # warm parchment ink
 font = "sans serif"
 
 [server]

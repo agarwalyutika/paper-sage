@@ -48,7 +48,7 @@ facts).
 - **Swappable LLM backend** — free hosted Llama (Groq) by default; Claude or local Ollama via one config flag
 - **100% open-source & free** — open models for embeddings/reranking, free Groq tier for generation
 - **User accounts** — register / log in / log out with securely hashed passwords (PBKDF2-SHA256 + per-user salt, constant-time check); each user's chats and saved analyses are private to them
-- **Distinctive editorial UI** — a custom "magazine" design system (Syne display type, oversized mastheads with eyebrow labels, a single bold accent, sharp corners), section tabs, example-question chips, a 📎 attach button, and expandable source cards
+- **Distinctive "Oxblood" identity** — a custom bookplate-monogram logo (no stock emoji) and a two-mood design system: **dark "Library"** (oxblood + brass) and **light "Parchment"** (aged paper + oxblood), switchable with a ☀️/🌙 toggle. Magazine-style mastheads (Syne display type), section tabs, example chips, a 📎 attach button, and expandable source cards
 
 ---
 
