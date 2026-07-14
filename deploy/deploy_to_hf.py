@@ -44,17 +44,20 @@ def main() -> None:
         sys.exit("Not logged in. Run:  huggingface-cli login   (paste a WRITE token)")
     print("Logged in as:", me["name"])
 
-    # 1) Fine-tuned reranker -> Hub model repo
+    # 1) Fine-tuned reranker -> Hub model repo (create only if it doesn't exist yet)
     ft = ROOT / "models" / "bge-reranker-base-ft"
     if ft.exists():
-        create_repo(MODEL_REPO, repo_type="model", exist_ok=True)
+        if not api.repo_exists(MODEL_REPO, repo_type="model"):
+            create_repo(MODEL_REPO, repo_type="model")
         print(f"Uploading fine-tuned reranker -> {MODEL_REPO}  (~1GB, be patient)…")
         api.upload_folder(folder_path=str(ft), repo_id=MODEL_REPO, repo_type="model")
     else:
         print("WARNING: models/bge-reranker-base-ft not found — demo will use the base reranker.")
 
-    # 2) The Space (Docker SDK — runs the Streamlit app via the Dockerfile)
-    create_repo(SPACE_REPO, repo_type="space", space_sdk="docker", exist_ok=True)
+    # 2) The Space — create only if missing (creating a Docker Space now needs PRO;
+    #    an existing one keeps working, so we skip creation and just upload to it).
+    if not api.repo_exists(SPACE_REPO, repo_type="space"):
+        create_repo(SPACE_REPO, repo_type="space", space_sdk="docker")
 
     # 3a) Space README (frontmatter) first…
     api.upload_file(path_or_fileobj=str(ROOT / "deploy" / "space_readme.md"),
